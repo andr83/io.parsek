@@ -14,3 +14,9 @@ def parsekModule(path: String): Project = {
 }
 
 lazy val core = parsekModule("core")
+  .settings(
+    libraryDependencies ++= Seq(
+      Library.cats,
+      Library.scalaTest
+    )
+  )
