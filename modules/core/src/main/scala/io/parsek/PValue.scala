@@ -27,8 +27,9 @@ object PValue {
   final def arr(values: PValue*): PValue = PArray(values.toVector)
   final def pmap(fields: FieldType*): PValue = PMap(fields.toMap)
 
-  final def fromValues(values: Iterable[PValue]): PValue = PArray(values.toVector)
-  final def fromFields(fields: Iterable[FieldType]): PValue = PMap(fields.toMap)
+  final def fromValues(values: Traversable[PValue]): PValue = PArray(values.toVector)
+  final def fromFields(fields: Traversable[FieldType]): PValue = PMap(fields.toMap)
+  final def fromMap(map: Map[String, PValue]): PValue = PMap(map)
 
   final def fromBoolean(v: Boolean): PValue = if (v) True else False
   final def fromInt(v: Int): PValue = PInt(v)
@@ -36,4 +37,6 @@ object PValue {
   final def fromDouble(v: Double): PValue = PDouble(v)
   final def fromString(v: String): PValue = PString(v)
   final def fromInstant(v: Instant): PValue = PTime(v)
+
+  def apply[A : Encoder](a: A): PValue = implicitly[Encoder[A]].apply(a)
 }
