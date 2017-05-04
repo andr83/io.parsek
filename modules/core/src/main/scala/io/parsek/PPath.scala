@@ -1,6 +1,7 @@
 package io.parsek
 
 import java.time.Instant
+import cats.syntax.either._
 
 import io.parsek.PValue._
 import io.parsek.optics._
@@ -27,6 +28,9 @@ case class PPath(value: PValidated[PValue]) extends Dynamic {
   def at(key: String): PPath = PPath(pmap compose index(key))
 
   def selectDynamic(field: String): PPath = PPath(pmap.compose(index(field)))
+
+  def orElse(fallback: PPath): PPath = PPath(Validation.apply[PValue, Throwable, PValue]
+    (s=> value.get(s).orElse(fallback.value.get(s)))(value._set))
 }
 
 object PPath extends DefaultDecoders {

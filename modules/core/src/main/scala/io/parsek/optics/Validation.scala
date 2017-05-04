@@ -33,6 +33,7 @@ case class PValidation[S, T, +E, A, B](private
       d => s=> self.modify(other.set(d))(s)
     )
 
+  //def orElse[C, D, F >: E](other: PValidation[A, B, F, C, D]): PValidation[S, T, E, C, D]
   //@inline final def compose[C, D](other: PPrism[A, B, C, D]): PValidation[S, T, C, D] = compose(other.asOptional)
 }
 
