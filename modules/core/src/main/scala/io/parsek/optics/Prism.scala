@@ -27,9 +27,9 @@ case class PPrism[S, T, A, B](
     d=> self._reverseGet(other.reverseGet(d))
   )
 
-  @inline final def compose[C,D](other: POptional[A, B, C, D]): POptional[S, T, C, D] = self.asOptional compose other
+  //@inline final def compose[C,D](other: PValidation[A, B, C, D]): PValidation[S, T, C, D] = self.asOptional compose other
 
-  @inline final def asOptional: POptional[S, T, A, B] = new POptional[S, T, A, B](self._getOrModify)(self.set)
+  //@inline final def asOptional: PValidation[S, T, A, B] = new PValidation[S, T, A, B](self._getOrModify)(self.set)
 }
 
 object Prism {
