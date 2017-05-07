@@ -25,7 +25,7 @@ object PValue {
   final val False: PValue = PBoolean(false)
 
   final def arr(values: PValue*): PValue = PArray(values.toVector)
-  final def pmap(fields: FieldType*): PValue = PMap(fields.toMap)
+  final def pmap(fields: FieldType*): PMap = PMap(fields.toMap)
 
   final def fromValues(values: Traversable[PValue]): PValue = PArray(values.toVector)
   final def fromFields(fields: Traversable[FieldType]): PValue = PMap(fields.toMap)

@@ -4,8 +4,8 @@ import cats.syntax.either._
 /**
   * @author andr83
   */
-case class PValidation[S, T, +E, A, B](private
-  val _getOrModify: S => (E,T) Either A)(
+case class PValidation[S, T, +E, A, B](
+  _getOrModify: S => (E,T) Either A)(
   val _set: B => S => T
 ) { self=>
   @inline final def set(b: B): (S) => T = _set(b)
@@ -44,7 +44,7 @@ object Validation {
   )
 
   def id[A, E]: Validation[A, E, A] = new PValidation[A, A, E, A, A](
-    s=> Right(s))(
-    _=> identity
+    s => Right(s))(
+    newVal => _ => newVal
   )
 }
