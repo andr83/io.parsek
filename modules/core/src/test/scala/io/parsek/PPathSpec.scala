@@ -34,6 +34,24 @@ class PPathSpec extends FlatSpec with Matchers {
     root.fArray.arr.getOption(testValue) shouldBe Some(Vector(PValue(1), PValue(2), PValue(3)))
   }
 
+  it should "allow map and modify values in" in {
+    val expected = testValue.copy(testValue.value + ("fInt" -> PValue(root.fInt.int.getOption(testValue).getOrElse(0) * 100)))
+
+    root.fInt.int.modify(_ * 100)(testValue) shouldBe expected
+    root.fInt.map[Int, Int](_ * 10).int.modify(_ * 10)(testValue) shouldBe expected
+
+    val lengthLense = root.fString.map[String, Int](_.length).int
+    lengthLense.getOption(testValue) shouldBe Some(5)
+
+    root.fInt.mapT[Int, Int](v => Right(v * 10)).int.modify(_ * 10)(testValue) shouldBe expected
+    root.fInt.mapT[Int, Int](_ => Left(new RuntimeException)).int.modify(_ * 10)(testValue) shouldBe testValue
+  }
+
+  it should "filter values" in {
+    root.fLong.filter[Long](_ > 10).int.getOption(testValue) shouldBe Some(100)
+    root.fLong.filter[Long](_ < 0).int.get(testValue) shouldBe Left(FilterFailure)
+  }
+
   "orElse" should "return value from fallback path on primary fail" in {
     root.fStringWrong.string.get(testValue) shouldBe a [Left[_, _]]
     root.fStringWrong.orElse(root.fString).string.getOption(testValue) shouldBe Some("hello")
