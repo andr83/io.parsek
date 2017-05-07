@@ -9,6 +9,10 @@ import io.parsek.PValue._
   * @author Andrei Tupitcyn
   */
 trait DefaultDecoders {
+  implicit val idDecoder = Decoder.partial[PValue] {
+    case v: PValue=> Right(v)
+  }
+
   implicit val nullDecoder = Decoder.partial[Unit] {
     case Null=> Right(())
   }

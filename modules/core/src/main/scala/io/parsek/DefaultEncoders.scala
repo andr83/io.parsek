@@ -6,6 +6,7 @@ import java.time.Instant
   * @author Andrei Tupitcyn
   */
 trait DefaultEncoders {
+  implicit val idEncoder = Encoder.pure[PValue](identity)
   implicit val booleanEncoder = Encoder.pure[Boolean](PValue.fromBoolean)
   implicit val intEncoder = Encoder.pure[Int](PValue.fromInt)
   implicit val longEncoder = Encoder.pure[Long](PValue.fromLong)
