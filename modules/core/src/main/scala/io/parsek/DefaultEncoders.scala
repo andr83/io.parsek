@@ -16,7 +16,7 @@ trait DefaultEncoders {
   implicit def traversableEncoder[A, C[A] <: Iterable[A]](implicit e: Encoder[A]) = Encoder.pure[C[A]](it => {
     PValue.fromValues(it.map(e.apply))
   })
-  implicit def mapEncoder[A](implicit e: Encoder[A]) = Encoder.pure[Map[String, A]](m=> {
+  implicit def mapEncoder[A](implicit e: Encoder[A]) = Encoder.pure[Map[Symbol, A]](m=> {
     PValue.fromMap(m.mapValues(e.apply))
   })
 }

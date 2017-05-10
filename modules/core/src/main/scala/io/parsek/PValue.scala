@@ -8,7 +8,7 @@ import java.time.Instant
 sealed trait PValue extends Product with Serializable
 
 object PValue {
-  type FieldType = (String, PValue)
+  type FieldType = (Symbol, PValue)
   private[parsek] final case class PBoolean(value: Boolean) extends PValue
   private[parsek] final case class PInt(value: Int) extends PValue
   private[parsek] final case class PLong(value: Long) extends PValue
@@ -17,7 +17,7 @@ object PValue {
   private[parsek] final case class PTime(value: Instant) extends PValue
   private[parsek] final case class PBytes(value: Array[Byte]) extends PValue
   private[parsek] final case class PArray(value: Vector[PValue]) extends PValue
-  private[parsek] final case class PMap(value: Map[String, PValue]) extends PValue
+  private[parsek] final case class PMap(value: Map[Symbol, PValue]) extends PValue
   private[parsek] final case object PNull extends PValue
 
   final val Null: PValue = PNull
@@ -29,7 +29,7 @@ object PValue {
 
   final def fromValues(values: Traversable[PValue]): PValue = PArray(values.toVector)
   final def fromFields(fields: Traversable[FieldType]): PValue = PMap(fields.toMap)
-  final def fromMap(map: Map[String, PValue]): PValue = PMap(map)
+  final def fromMap(map: Map[Symbol, PValue]): PValue = PMap(map)
 
   final def fromBoolean(v: Boolean): PValue = if (v) True else False
   final def fromInt(v: Int): PValue = PInt(v)

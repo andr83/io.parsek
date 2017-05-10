@@ -61,7 +61,7 @@ trait DefaultDecoders {
     case PArray(v) => Right(v)
   }
 
-  implicit val mapDecoder = Decoder.partial[Map[String, PValue]] {
+  implicit val mapDecoder = Decoder.partial[Map[Symbol, PValue]] {
     case PMap(v) => Right(v)
   }
 

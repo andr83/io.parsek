@@ -30,11 +30,13 @@ case class PPath(value: PValidated[PValue]) extends Dynamic {
 
   def arr: PValidated[Vector[PValue]] = value compose pArray
 
-  def pmap: PValidated[Map[String, PValue]] = value compose pMap
+  def pmap: PValidated[Map[Symbol, PValue]] = value compose pMap
 
   def bytes: PValidated[Array[Byte]] = value compose pBytes
 
-  def at(key: String): PPath = PPath(pmap compose index(key))
+  def at(key: Symbol): PPath = PPath(pmap compose index(key))
+
+  def at(key: String): PPath = PPath(pmap compose index(Symbol(key)))
 
   def map[A: Decoder, B: Encoder](f: A => B): PPath = PPath(PValidation[PValue, PValue, Throwable, PValue, PValue](
     s => value._getOrModify(s)
@@ -95,7 +97,7 @@ case class PPath(value: PValidated[PValue]) extends Dynamic {
   def orElse(fallback: PPath): PPath = PPath(Validation.apply[PValue, Throwable, PValue]
     (s => value.get(s).orElse(fallback.value.get(s)))(value._set))
 
-  def selectDynamic(field: String): PPath = PPath(pmap.compose(index(field)))
+  def selectDynamic(field: String): PPath = PPath(pmap.compose(index(Symbol(field))))
 }
 
 object PPath extends DefaultDecoders {
@@ -121,12 +123,12 @@ object PPath extends DefaultDecoders {
 
   def pArray = validated[Vector[PValue]](PArray)
 
-  def pMap = validated[Map[String, PValue]](PMap)
+  def pMap = validated[Map[Symbol, PValue]](PMap)
 
   def pBytes = validated[Array[Byte]](PBytes)
 
-  def index(key: String): Validation[Map[String, PValue], Throwable, PValue] =
-    Validation[Map[String, PValue], Throwable, PValue](v =>
+  def index(key: Symbol): Validation[Map[Symbol, PValue], Throwable, PValue] =
+    Validation[Map[Symbol, PValue], Throwable, PValue](v =>
       v.get(key).fold[Throwable Either PValue](Left(TraverseFailure(s"Field $key doesn't exist")))(a => Right(a))
     ) { a => v => v + (key -> a) }
 }
