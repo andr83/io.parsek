@@ -66,6 +66,30 @@ case class PPath(value: PValidated[PValue]) extends Dynamic {
       })
   )(value._set))
 
+  /**
+    * Memoize is a lens with caching of getting result.
+    * Can be usefull for getting access optimisation to source value inner fields
+    *
+    * @return
+    */
+  def memoize: PPath = {
+    // Source argument which result need to memoize
+    var source: Option[PValue] = None
+    var result: Option[(Throwable, PValue) Either PValue] = None
+    PPath(PValidation[PValue, PValue, Throwable, PValue, PValue](s => {
+      (for {
+        _source <- source
+        if _source == s
+        _result <- result
+      } yield _result) getOrElse {
+        val _result = value._getOrModify(s)
+        source = Some(s)
+        result = Some(_result)
+        _result
+      }
+    })(value._set))
+  }
+
   def set(v: PValue): PValue => PValue = value.set(v)
 
   def orElse(fallback: PPath): PPath = PPath(Validation.apply[PValue, Throwable, PValue]

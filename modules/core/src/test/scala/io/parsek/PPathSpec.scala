@@ -56,4 +56,18 @@ class PPathSpec extends FlatSpec with Matchers {
     root.fStringWrong.string.get(testValue) shouldBe a [Left[_, _]]
     root.fStringWrong.orElse(root.fString).string.getOption(testValue) shouldBe Some("hello")
   }
+
+  "memoize" should "cache result for the source value" in {
+    val lens = root.fArray.map[Vector[PValue], Vector[PValue]](arr => arr :+ PValue(4))
+    val curr = lens.memoize
+
+    val v0 = lens.arr.getOption(testValue).get
+    val v1 = curr.arr.getOption(testValue).get
+    val v2 = curr.arr.getOption(testValue).get
+    val v3 = curr.arr.getOption(PValue(testValue.value + ("fBool" -> PValue(false)))).get
+
+    v0 shouldNot be theSameInstanceAs v1
+    v1 should be theSameInstanceAs v2
+    v2 shouldNot be theSameInstanceAs v3
+  }
 }
