@@ -8,8 +8,8 @@ def parsekModule(path: String): Project = {
   val id = path.split("-").reduce(_ + _.capitalize)
   Project(id, file(s"modules/$path"))
     .settings(
-      moduleName := "parsek-$name",
-      name := "Parsek $name"
+      moduleName := s"parsek-$path",
+      name := s"Parsek $id"
     )
 }
 
@@ -20,3 +20,9 @@ lazy val core = parsekModule("core")
       Library.scalaTest
     )
   )
+
+lazy val jackson = parsekModule("jackson")
+  .settings(
+    libraryDependencies ++= Library.jackson
+  )
+  .dependsOn(core)
