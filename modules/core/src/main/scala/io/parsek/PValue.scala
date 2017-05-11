@@ -37,6 +37,7 @@ object PValue {
   final def fromDouble(v: Double): PValue = PDouble(v)
   final def fromString(v: String): PValue = PString(v)
   final def fromInstant(v: Instant): PValue = PTime(v)
+  final def fromBytes(v: Array[Byte]): PValue = PBytes(v)
 
   def apply[A : Encoder](a: A): PValue = implicitly[Encoder[A]].apply(a)
 }

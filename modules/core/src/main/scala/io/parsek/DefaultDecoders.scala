@@ -9,42 +9,42 @@ import io.parsek.PValue._
   * @author Andrei Tupitcyn
   */
 trait DefaultDecoders {
-  implicit val idDecoder = Decoder.partial[PValue] {
-    case v: PValue=> Right(v)
+  implicit val idDecoder: Decoder[PValue] = Decoder.partial[PValue] {
+    case v: PValue => Right(v)
   }
 
-  implicit val nullDecoder = Decoder.partial[Unit] {
-    case Null=> Right(())
+  implicit val nullDecoder: Decoder[Unit] = Decoder.partial[Unit] {
+    case Null => Right(())
   }
 
-  implicit val booleanDecoder = Decoder.partial[Boolean] {
+  implicit val booleanDecoder: Decoder[Boolean] = Decoder.partial[Boolean] {
     case PBoolean(v) => Right(v)
     case PString(str) => Either.catchNonFatal(str.toBoolean)
   }
 
-  implicit val intDecoder = Decoder.partial[Int] {
+  implicit val intDecoder: Decoder[Int] = Decoder.partial[Int] {
     case PInt(v) => Right(v)
     case PLong(v) => Right(v.toInt)
     case PDouble(v) => Right(v.toInt)
-    case PString(v)=> Either.catchNonFatal(v.toInt)
+    case PString(v) => Either.catchNonFatal(v.toInt)
   }
 
-  implicit val longDecoder = Decoder.partial[Long] {
+  implicit val longDecoder: Decoder[Long] = Decoder.partial[Long] {
     case PInt(v) => Right(v.toLong)
     case PLong(v) => Right(v)
     case PDouble(v) => Right(v.toLong)
-    case PString(v)=> Either.catchNonFatal(v.toLong)
+    case PString(v) => Either.catchNonFatal(v.toLong)
     case PTime(v) => Right(v.toEpochMilli)
   }
 
-  implicit val doubleDecoder = Decoder.partial[Double] {
+  implicit val doubleDecoder: Decoder[Double] = Decoder.partial[Double] {
     case PInt(v) => Right(v.toDouble)
     case PLong(v) => Right(v.toDouble)
     case PDouble(v) => Right(v)
-    case PString(v)=> Either.catchNonFatal(v.toDouble)
+    case PString(v) => Either.catchNonFatal(v.toDouble)
   }
 
-  implicit val stringDecoder = Decoder.partial[String] {
+  implicit val stringDecoder: Decoder[String] = Decoder.partial[String] {
     case PString(v) => Right(v)
     case PInt(v) => Right(v.toString)
     case PLong(v) => Right(v.toString)
@@ -52,7 +52,7 @@ trait DefaultDecoders {
     case PBoolean(v) => Right(v.toString)
   }
 
-  implicit val instantDecoder = Decoder.partial[Instant] {
+  implicit val instantDecoder: Decoder[Instant] = Decoder.partial[Instant] {
     case PTime(v) => Right(v)
     case PLong(v) => Right(Instant.ofEpochMilli(v))
   }
@@ -61,11 +61,11 @@ trait DefaultDecoders {
     case PArray(v) => Right(v)
   }
 
-  implicit val mapDecoder = Decoder.partial[Map[Symbol, PValue]] {
+  implicit val mapDecoder: Decoder[Map[Symbol, PValue]] = Decoder.partial[Map[Symbol, PValue]] {
     case PMap(v) => Right(v)
   }
 
-  implicit val bytesDecoder = Decoder.partial[Array[Byte]] {
+  implicit val bytesDecoder: Decoder[Array[Byte]] = Decoder.partial[Array[Byte]] {
     case PBytes(v) => Right(v)
   }
 }

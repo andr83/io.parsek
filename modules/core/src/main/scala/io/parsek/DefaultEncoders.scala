@@ -2,6 +2,8 @@ package io.parsek
 
 import java.time.Instant
 
+import scala.language.higherKinds
+
 /**
   * @author Andrei Tupitcyn
   */
