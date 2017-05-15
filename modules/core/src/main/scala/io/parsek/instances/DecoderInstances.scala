@@ -1,14 +1,15 @@
-package io.parsek
+package io.parsek.instances
 
 import java.time.Instant
 
 import cats.syntax.either._
 import io.parsek.PValue._
+import io.parsek.{Decoder, PValue}
 
 /**
   * @author Andrei Tupitcyn
   */
-trait DefaultDecoders {
+trait DecoderInstances {
   implicit val idDecoder: Decoder[PValue] = Decoder.partial[PValue] {
     case v: PValue => Right(v)
   }
@@ -70,4 +71,4 @@ trait DefaultDecoders {
   }
 }
 
-object DefaultDecoders extends DefaultDecoders
+object DecoderInstances extends DecoderInstances
