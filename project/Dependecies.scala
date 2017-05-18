@@ -9,6 +9,7 @@ object Version {
 
 object Library {
   val cats = "org.typelevel" %% "cats" % Version.cats
+  val catsFree = "org.typelevel" %% "cats-free" % Version.cats
   val jackson = Seq(
     "com.fasterxml.jackson.core" % "jackson-core" % Version.jackson,
     "com.fasterxml.jackson.module" %% "jackson-module-scala" % Version.jackson

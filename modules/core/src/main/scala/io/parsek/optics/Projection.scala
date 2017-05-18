@@ -1,6 +1,6 @@
-package io.parsek
+package io.parsek.optics
 
-import io.parsek.optics.Validation
+import io.parsek.PValue
 
 import scala.collection.mutable
 import scala.language.implicitConversions

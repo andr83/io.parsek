@@ -23,6 +23,16 @@ lazy val core = parsekModule("core")
 
 lazy val jackson = parsekModule("jackson")
   .settings(
-    libraryDependencies ++= Library.jackson
+    libraryDependencies ++= Library.jackson,
+    libraryDependencies += Library.scalaTest
+  )
+  .dependsOn(core)
+
+lazy val jdbc = parsekModule("jdbc")
+  .settings(
+    libraryDependencies ++= Seq(
+      Library.catsFree,
+      Library.scalaTest
+    )
   )
   .dependsOn(core)

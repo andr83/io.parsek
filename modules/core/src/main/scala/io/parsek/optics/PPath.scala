@@ -1,11 +1,12 @@
-package io.parsek
+package io.parsek.optics
 
 import java.time.Instant
 
 import cats.syntax.either._
-import io.parsek.PPath._
 import io.parsek.PValue._
-import io.parsek.optics._
+import io.parsek.instances.DecoderInstances
+import io.parsek.optics.PPath.PValidated
+import io.parsek.{Decoder, Encoder, FilterFailure, PValue, TraverseFailure}
 
 import scala.language.dynamics
 
@@ -13,6 +14,7 @@ import scala.language.dynamics
   * @author andr83
   */
 case class PPath(value: PValidated[PValue]) extends Dynamic {
+  import io.parsek.optics.PPath._
 
   def `null`: PValidated[Unit] = value compose pNull
 
@@ -100,32 +102,32 @@ case class PPath(value: PValidated[PValue]) extends Dynamic {
   def selectDynamic(field: String): PPath = PPath(pmap.compose(index(Symbol(field))))
 }
 
-object PPath extends DefaultDecoders {
+object PPath extends DecoderInstances {
   type PValidated[A] = Validation[PValue, Throwable, A]
   val root = PPath(Validation.id)
 
   def validated[A: Decoder](reverseGet: A => PValue): PValidated[A] =
     Validation(implicitly[Decoder[A]].apply)(a => _ => reverseGet(a))
 
-  def pNull = validated[Unit](_ => Null)
+  def pNull: PValidated[Unit] = validated[Unit](_ => Null)
 
-  def pBoolean = validated[Boolean](PBoolean)
+  def pBoolean: PValidated[Boolean] = validated[Boolean](PBoolean)
 
-  def pInt = validated[Int](PInt)
+  def pInt: PValidated[Int] = validated[Int](PInt)
 
-  def pLong = validated[Long](PLong)
+  def pLong: PValidated[Long] = validated[Long](PLong)
 
-  def pDouble = validated[Double](PDouble)
+  def pDouble: PValidated[Double] = validated[Double](PDouble)
 
-  def pString = validated[String](PString)
+  def pString: PValidated[String] = validated[String](PString)
 
-  def pTime = validated[Instant](PTime)
+  def pTime: PValidated[Instant] = validated[Instant](PTime)
 
-  def pArray = validated[Vector[PValue]](PArray)
+  def pArray: PValidated[Vector[PValue]] = validated[Vector[PValue]](PArray)
 
-  def pMap = validated[Map[Symbol, PValue]](PMap)
+  def pMap: PValidated[Map[Symbol, PValue]] = validated[Map[Symbol, PValue]](PMap)
 
-  def pBytes = validated[Array[Byte]](PBytes)
+  def pBytes: PValidated[Array[Byte]] = validated[Array[Byte]](PBytes)
 
   def index(key: Symbol): Validation[Map[Symbol, PValue], Throwable, PValue] =
     Validation[Map[Symbol, PValue], Throwable, PValue](v =>
