@@ -13,4 +13,6 @@ final case class ParsingFailure(message: String, underlying: Throwable) extends 
 
 final case class TraverseFailure(message: String) extends Error
 
+final case class NullValue(message: String) extends Error
+
 final case object FilterFailure extends Error

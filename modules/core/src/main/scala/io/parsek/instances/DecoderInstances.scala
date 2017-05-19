@@ -3,6 +3,7 @@ package io.parsek.instances
 import java.time.Instant
 
 import cats.syntax.either._
+import io.parsek.Decoder.Result
 import io.parsek.PValue._
 import io.parsek.{Decoder, PValue}
 
@@ -68,6 +69,13 @@ trait DecoderInstances {
 
   implicit val bytesDecoder: Decoder[Array[Byte]] = Decoder.partial[Array[Byte]] {
     case PBytes(v) => Right(v)
+  }
+
+  implicit def optDecoder[A : Decoder]: Decoder[Option[A]] = new Decoder[Option[A]] {
+    override def apply(v: PValue): Result[Option[A]] = v match {
+      case Null => Right(None)
+      case _ => implicitly[Decoder[A]].apply(v).map(Some.apply)
+    }
   }
 }
 

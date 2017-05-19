@@ -1,6 +1,7 @@
 package io.parsek.optics
 
-import io.parsek.{FilterFailure, PValue, pmap, root}
+import io.parsek._
+import io.parsek.implicits._
 import org.scalatest.{FlatSpec, Matchers}
 
 /**
