@@ -101,4 +101,16 @@ class QuerySpec extends FlatSpec with Matchers {
       res4 shouldBe r1 :: r2 :: Nil
     }
   }
+
+  it should "insert values in batch mode" in {
+    withQueryExecutor{implicit qe=>
+      val res1 = sql"delete from test".update
+      res1 shouldBe 2
+
+      qe.batchInsert("TEST", Seq(r1, r2))
+
+      val res2 = sql"select * from test".list
+      res2 shouldBe r1 :: r2 :: Nil
+    }
+  }
 }

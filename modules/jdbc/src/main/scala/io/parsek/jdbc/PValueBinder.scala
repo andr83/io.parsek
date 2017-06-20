@@ -4,6 +4,7 @@ import java.sql.{Date, PreparedStatement, Timestamp}
 import java.time.{Instant, LocalDateTime, ZoneId}
 
 import io.parsek.instances.DecoderInstances._
+import io.parsek.types._
 import io.parsek.{Decoder, NullValue}
 
 /**
@@ -42,6 +43,17 @@ object PValueBinder {
     case java.sql.Types.TIMESTAMP | java.sql.Types.TIMESTAMP_WITH_TIMEZONE => instantBinder
     case java.sql.Types.DATE => dateBinder
     case java.sql.Types.BLOB => blobBinder
+    case _ => stringBinder
+  }
+
+  def apply(dataType: PType): PValueBinder = dataType match {
+    case PBooleanType => booleanBinder
+    case PIntType => intBinder
+    case PLongType => longBinder
+    case PDoubleType => doubleBinder
+    case PInstantType => instantBinder
+    case PStringType => stringBinder
+    case PBinaryType => blobBinder
     case _ => stringBinder
   }
 }

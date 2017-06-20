@@ -4,6 +4,7 @@ import java.sql.{Connection, ResultSet}
 
 import io.parsek.PValue
 import io.parsek.PValue.PMap
+import io.parsek.types.PStructType
 
 /**
   * @author Andrei Tupitcyn
@@ -21,5 +22,7 @@ abstract class QueryExecutor {
   def executeBatch(query: Query, batchParams: Iterable[Iterable[ParameterBinder]]): Array[Int]
 
   def insert(table: String, value: PMap): Int
-  def batchInsert(it: Iterable[PValue]): Unit
+
+  def batchInsert(table: String, it: Iterable[PMap]): Unit
+  def batchInsert(table: String, it: Iterable[PMap], scheme: PStructType): Unit
 }
