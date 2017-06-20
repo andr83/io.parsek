@@ -7,14 +7,6 @@ package object types {
 
   abstract sealed class PType
 
-  case class PStructField(
-    name: Symbol,
-    dataType: PType,
-    nullable: Boolean = true
-  )
-
-  case class PStructType(fields: Array[PStructField]) extends PType
-
   case object PBooleanType extends PType
 
   case object PIntType extends PType
@@ -32,6 +24,17 @@ package object types {
   case object PArrayType extends PType
 
   case object PMapType extends PType
+
+  case class PStructField(
+    name: Symbol,
+    dataType: PType,
+    nullable: Boolean = true
+  )
+
+  case class PStructType(fields: Array[PStructField]) extends PType {
+    def add(field: PStructField): PStructType = PStructType(fields.filter(_.name != field.name) :+ field)
+    def add(name: Symbol, dataType: PType, nullable: Boolean = true): PStructType = add(PStructField(name, dataType, nullable))
+  }
 
   object PStructType {
     def apply(fields: Seq[PStructField]): PStructType = PStructType(fields.toArray)

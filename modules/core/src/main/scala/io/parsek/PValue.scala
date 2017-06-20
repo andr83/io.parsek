@@ -9,15 +9,17 @@ sealed trait PValue extends Product with Serializable
 
 object PValue {
   type FieldType = (Symbol, PValue)
-  private[parsek] final case class PBoolean(value: Boolean) extends PValue
-  private[parsek] final case class PInt(value: Int) extends PValue
-  private[parsek] final case class PLong(value: Long) extends PValue
-  private[parsek] final case class PDouble(value: Double) extends PValue
-  private[parsek] final case class PString(value: String) extends PValue
-  private[parsek] final case class PTime(value: Instant) extends PValue
-  private[parsek] final case class PBytes(value: Array[Byte]) extends PValue
-  private[parsek] final case class PArray(value: Vector[PValue]) extends PValue
-  private[parsek] final case class PMap(value: Map[Symbol, PValue]) extends PValue
+  final case class PBoolean(value: Boolean) extends PValue
+  final case class PInt(value: Int) extends PValue
+  final case class PLong(value: Long) extends PValue
+  final case class PDouble(value: Double) extends PValue
+  final case class PString(value: String) extends PValue
+  final case class PTime(value: Instant) extends PValue
+  final case class PBytes(value: Array[Byte]) extends PValue
+  final case class PArray(value: Vector[PValue]) extends PValue
+  final case class PMap(value: Map[Symbol, PValue]) extends PValue {
+    def update(k: Symbol, v: PValue): PMap = PMap(value.updated(k, v))
+  }
   private[parsek] final case object PNull extends PValue
 
   final val Null: PValue = PNull

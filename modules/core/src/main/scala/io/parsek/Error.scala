@@ -15,4 +15,6 @@ final case class TraverseFailure(message: String) extends Error
 
 final case class NullValue(message: String) extends Error
 
+final case class NullField(field: Symbol, message: String) extends Error
+
 final case object FilterFailure extends Error
