@@ -59,7 +59,7 @@ trait DecoderInstances {
     case PLong(v) => Right(Instant.ofEpochMilli(v))
   }
 
-  implicit val vectorDecoder = Decoder.partial[Vector[PValue]] {
+  implicit val vectorDecoder: Decoder[Vector[PValue]] = Decoder.partial[Vector[PValue]] {
     case PArray(v) => Right(v)
   }
 
