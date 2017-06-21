@@ -30,7 +30,8 @@ lazy val calcite = parsekModule("calcite")
     libraryDependencies ++= Seq(
       Library.calcite,
       Library.calciteLinq4j,
-      Library.scalaTest
+      Library.scalaTest,
+      Library.scalaMeter
     )
   )
   .dependsOn(core, jdbc)

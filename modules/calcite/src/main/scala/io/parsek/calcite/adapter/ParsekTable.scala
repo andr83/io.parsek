@@ -10,18 +10,21 @@ import org.apache.calcite.rel.`type`.{RelDataType, RelDataTypeFactory}
 import org.apache.calcite.schema.ScannableTable
 import org.apache.calcite.schema.impl.AbstractTable
 
+import collection.JavaConverters._
+
 /**
   * @author Andrei Tupitcyn
   */
-case class ParsekTable(source: util.List[Array[AnyRef]], schema: PStructType) extends AbstractTable with ScannableTable {
+case class ParsekTable(source: util.Map[util.List[String], Array[AnyRef]], schema: PStructType, pk: Array[String]) extends AbstractTable with ScannableTable {
 
   import ParsekTable._
 
   val names: Seq[String] = schema.fields.map(_.name.name)
+  val keys: Seq[Int] = pk.map(k=> schema.fields.indexWhere(_.name.name == k))
   val decoders: Seq[JavaTypeDecoder] = schema.fields.map(f => javaTypeDecoder(f.name, f.dataType))
 
   override def scan(root: DataContext): Enumerable[Array[AnyRef]] = new AbstractEnumerable[Array[AnyRef]] {
-    override def enumerator(): Enumerator[Array[AnyRef]] = Linq4j.enumerator(source)
+    override def enumerator(): Enumerator[Array[AnyRef]] = Linq4j.enumerator(source.values())
   }
 
   override def getRowType(typeFactory: RelDataTypeFactory): RelDataType = {
@@ -32,9 +35,17 @@ case class ParsekTable(source: util.List[Array[AnyRef]], schema: PStructType) ex
     b.build()
   }
 
-  def add(r: PMap): Unit = source.add(convert(r))
+  def key(value: Array[AnyRef]): util.List[String] = util.Collections.unmodifiableList(keys.map(i=> value(i).toString).asJava)
+  def value(r: PMap): Array[AnyRef] = decoders.map(_.apply(r)).toArray
 
-  def convert(r: PMap): Array[AnyRef] = decoders.map(_.apply(r)).toArray
+  def add(r: PMap): Unit = {
+    val v = value(r)
+    source.put(key(v), v)
+  }
+
+  def remove(r: PMap): Unit = {
+    source.remove(key(value(r)))
+  }
 }
 
 object ParsekTable {
@@ -43,7 +54,8 @@ object ParsekTable {
 
   type JavaTypeDecoder = PMap => AnyRef
 
-  def apply(schema: PStructType): ParsekTable = new ParsekTable(new util.ArrayList[Array[AnyRef]](), schema)
+  def apply(schema: PStructType, keys: Seq[String]): ParsekTable =
+    new ParsekTable(new util.HashMap[util.List[String], Array[AnyRef]](), schema, keys.toArray)
 
   def createParsekType(typeFactory: RelDataTypeFactory, dataType: PType): RelDataType = dataType match {
     case PBooleanType => typeFactory.createJavaType(classOf[Boolean])

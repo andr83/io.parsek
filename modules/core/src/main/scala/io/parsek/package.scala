@@ -18,6 +18,7 @@ import scala.collection.mutable
   */
 package object parsek {
   @inline val root: PPath = PPath.root
+  @inline val PMap = PValue.PMap
 
   @inline def arr(values: PValue*): PValue = PValue.arr(values: _*)
 

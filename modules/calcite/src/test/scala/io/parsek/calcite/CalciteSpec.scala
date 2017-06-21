@@ -61,7 +61,7 @@ class CalciteSpec extends FlatSpec with Matchers {
     val connection = DriverManager.getConnection("jdbc:calcite:", info)
     val calciteConnection: CalciteConnection = connection.asInstanceOf[CalciteConnection]
     val schema = calciteConnection.getRootSchema
-    val table = ParsekTable(scheme)
+    val table = ParsekTable(scheme, "int_field" :: Nil)
     schema.add("test", table)
 
     val qe = JdbcQueryExecutor(calciteConnection, LowerCaseConverter)
@@ -73,32 +73,52 @@ class CalciteSpec extends FlatSpec with Matchers {
   }
 
   "Calcite adapter" should "query over PValue data" in {
-    withQueryExecutor { table =>
-      implicit qe =>
-        table.add(r1)
+    withQueryExecutor { table => implicit qe =>
+      table.add(r1)
 
-        val res = sql"select * from test".row
-        res shouldBe r1
+      val res = sql"select * from test".row
+      res shouldBe r1
 
-        table.add(r2)
-        val res2 = sql"select * from test where int_field = 11".row
-        res2 shouldBe r2
+      table.add(r2)
+      val res2 = sql"select * from test where int_field = 11".row
+      res2 shouldBe r2
 
-        val res3 = sql"select count(1) from test".as[Int](1)
-        res3 shouldBe 2
+      val res3 = sql"select count(1) from test".as[Int](1)
+      res3 shouldBe 2
 
-        (1 to 100000) foreach (i => {
-          table.add(r1.update('int_field, PValue.fromInt(i)))
-        })
+      (1 to 100000) foreach (i => {
+        table.add(r1.update('int_field, PValue.fromInt(i)))
+      })
 
-        val res4 = sql"select count(1) from test".as[Int](1)
-        res4 shouldBe 100002
+      val res4 = sql"select count(1) from test".as[Int](1)
+      res4 shouldBe 100000
 
-        val strVal = r1.value.get('string_field).get.as[String].right.get
-        val start = System.nanoTime()
-        val res5 = sql"select * from test where int_field > 90000 and int_field < 90150 and string_field = $strVal".list
-        println(s"Time: ${(System.nanoTime() - start) / 1000000000.0}")
-      //res5 should have size 49
+      val strVal = r1.value.get('string_field).get.as[String].right.get
+      val start = System.nanoTime()
+      val res5 = sql"select * from test where int_field > 90000 and int_field < 90150 and string_field = $strVal".list
+      println(s"Time: ${(System.nanoTime() - start) / 1000000000.0}")
+      res5 should have size 149
+    }
+  }
+
+  it should "compact rows by pk" in {
+    withQueryExecutor { table => implicit qe =>
+      table.add(r1)
+
+      val res = sql"select count(1) from test".as[Int](1)
+      res shouldBe 1
+
+      val r3 = r1.update('long_field, PValue.fromLong(123L))
+      table.add(r3)
+      val res2 = sql"select count(1) from test".as[Int](1)
+      res2 shouldBe 1
+
+      val res3 = sql"select * from test where int_field=10".row
+      res3 shouldBe r3
+
+      table.remove(r1)
+      val res4 = sql"select count(1) from test".as[Int](1)
+      res4 shouldBe 0
     }
   }
 
