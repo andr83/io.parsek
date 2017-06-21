@@ -2,6 +2,7 @@ import sbt._
 
 
 object Version {
+  val calcite = "1.12.0"
   val cats = "0.9.0"
   val catsEffect = "0.2"
   val jackson = "2.8.8"
@@ -10,6 +11,8 @@ object Version {
 }
 
 object Library {
+  val calcite = "org.apache.calcite" % "calcite-core" % Version.calcite
+  val calciteLinq4j = "org.apache.calcite" % "calcite-linq4j" % Version.calcite
   val cats = "org.typelevel" %% "cats" % Version.cats
   val catsFree = "org.typelevel" %% "cats-free" % Version.cats
   val catsEffect = "org.typelevel" %% "cats-effect" % Version.catsEffect

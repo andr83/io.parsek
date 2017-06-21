@@ -59,6 +59,11 @@ trait DecoderInstances {
     case PLong(v) => Right(Instant.ofEpochMilli(v))
   }
 
+  implicit val timestampDecoder: Decoder[java.sql.Timestamp] = Decoder.partial[java.sql.Timestamp] {
+    case PTime(v) => Right(java.sql.Timestamp.from(v))
+    case PLong(v) => Right(new java.sql.Timestamp(v))
+  }
+
   implicit val vectorDecoder: Decoder[Vector[PValue]] = Decoder.partial[Vector[PValue]] {
     case PArray(v) => Right(v)
   }
