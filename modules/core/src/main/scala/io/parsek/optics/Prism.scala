@@ -4,7 +4,7 @@ import cats.syntax.either._
 /**
   * @author andr83
   */
-case class PPrism[S, T, A, B](
+case class PrismS[S, T, A, B](
   _getOrModify: S => T Either A)(
   _reverseGet: B => T
 ) extends Serializable {self=>
@@ -22,7 +22,7 @@ case class PPrism[S, T, A, B](
 
   @inline final def setOption(b: B): S => Option[T] = modifyOption(_ => b)
 
-  @inline final def compose[C, D](other: PPrism[A, B, C, D]): PPrism[S, T, C, D] = new PPrism[S, T, C, D](
+  @inline final def compose[C, D](other: PrismS[A, B, C, D]): PrismS[S, T, C, D] = new PrismS[S, T, C, D](
     s=> self._getOrModify(s).flatMap(a=> other._getOrModify(a).bimap(b=> self.set(b)(s), identity)))(
     d=> self._reverseGet(other.reverseGet(d))
   )
@@ -33,7 +33,7 @@ case class PPrism[S, T, A, B](
 }
 
 object Prism {
-  def apply[S, A](getOption: S => Option[A])(reverseGet: A => S): Prism[S, A] = new PPrism[S, S, A, A](s => {
+  def apply[S, A](getOption: S => Option[A])(reverseGet: A => S): Prism[S, A] = new PrismS[S, S, A, A](s => {
     getOption(s).fold[S Either A](Left(s))(a=> Right(a))
   })(reverseGet)
 

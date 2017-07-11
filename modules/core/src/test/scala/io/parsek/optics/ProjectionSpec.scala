@@ -10,10 +10,10 @@ import org.scalatest.{FlatSpec, Matchers}
 class ProjectionSpec extends FlatSpec with Matchers {
   "Projection" should "transform PMap value to another PMap" in {
     val p = Projection(
-      'newField -> root.field1.value,
+      'newField -> root.field1.required,
       'innerField -> Projection(
-        'inner1 -> root.field2.value,
-        'inner2 -> root.field3.value
+        'inner1 -> root.field2.required,
+        'inner2 -> root.field3.required
       )
     )
     val res = p(pmap(
@@ -21,12 +21,12 @@ class ProjectionSpec extends FlatSpec with Matchers {
       'field2 -> PValue("World"),
       'field3 -> PValue(16.2)
     ))
-    res shouldBe Right(pmap(
+    res shouldBe Right((Seq.empty[Throwable], pmap(
       'newField -> PValue(21),
       'innerField -> pmap(
         'inner1 -> PValue("World"),
         'inner2 -> PValue(16.2)
       )
-    ))
+    )))
   }
 }

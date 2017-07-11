@@ -76,6 +76,10 @@ trait DecoderInstances {
     case PBytes(v) => Right(v)
   }
 
+  implicit val pmapDecoder: Decoder[PMap] = Decoder.partial[PMap] {
+    case pm: PMap => Right(pm)
+  }
+
   implicit def optDecoder[A : Decoder]: Decoder[Option[A]] = new Decoder[Option[A]] {
     override def apply(v: PValue): Result[Option[A]] = v match {
       case Null => Right(None)
