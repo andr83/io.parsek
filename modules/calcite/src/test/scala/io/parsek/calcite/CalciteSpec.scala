@@ -61,7 +61,7 @@ class CalciteSpec extends FlatSpec with Matchers {
     val connection = DriverManager.getConnection("jdbc:calcite:", info)
     val calciteConnection: CalciteConnection = connection.asInstanceOf[CalciteConnection]
     val schema = calciteConnection.getRootSchema
-    val table = ParsekTable(scheme, "int_field" :: Nil)
+    val table = ParsekTable(scheme, 'int_field :: Nil)
     schema.add("test", table)
 
     val qe = JdbcQueryExecutor(calciteConnection, LowerCaseConverter)

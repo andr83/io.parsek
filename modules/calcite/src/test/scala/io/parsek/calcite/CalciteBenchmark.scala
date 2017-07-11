@@ -58,7 +58,7 @@ object CalciteBenchmark {
     val connection = DriverManager.getConnection("jdbc:calcite:", info)
     val calciteConnection: CalciteConnection = connection.asInstanceOf[CalciteConnection]
     val schema = calciteConnection.getRootSchema
-    val table = ParsekTable(scheme, "id" :: Nil)
+    val table = ParsekTable(scheme, 'id :: Nil)
     schema.add("test", table)
 
     val qe = JdbcQueryExecutor(calciteConnection, LowerCaseConverter)

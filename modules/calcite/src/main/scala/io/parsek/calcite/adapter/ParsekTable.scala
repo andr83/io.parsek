@@ -2,6 +2,7 @@ package io.parsek.calcite.adapter
 
 import java.util
 
+import io.parsek.PValue
 import io.parsek.PValue._
 import io.parsek.types._
 import org.apache.calcite.DataContext
@@ -15,12 +16,12 @@ import collection.JavaConverters._
 /**
   * @author Andrei Tupitcyn
   */
-case class ParsekTable(source: util.Map[util.List[String], Array[AnyRef]], schema: PStructType, pk: Array[String]) extends AbstractTable with ScannableTable {
+case class ParsekTable(source: util.Map[Seq[String], Array[AnyRef]], schema: PStructType, pk: Array[Symbol]) extends AbstractTable with ScannableTable {
 
   import ParsekTable._
 
   val names: Seq[String] = schema.fields.map(_.name.name)
-  val keys: Seq[Int] = pk.map(k=> schema.fields.indexWhere(_.name.name == k))
+  val keys: Seq[Int] = pk.map(k=> schema.fields.indexWhere(_.name == k))
   val decoders: Seq[JavaTypeDecoder] = schema.fields.map(f => javaTypeDecoder(f.name, f.dataType))
 
   override def scan(root: DataContext): Enumerable[Array[AnyRef]] = new AbstractEnumerable[Array[AnyRef]] {
@@ -35,7 +36,7 @@ case class ParsekTable(source: util.Map[util.List[String], Array[AnyRef]], schem
     b.build()
   }
 
-  def key(value: Array[AnyRef]): util.List[String] = util.Collections.unmodifiableList(keys.map(i=> value(i).toString).asJava)
+  def key(value: Array[AnyRef]): Seq[String] = keys.map(i=> value(i).toString)
   def value(r: PMap): Array[AnyRef] = decoders.map(_.apply(r)).toArray
 
   def add(r: PMap): Unit = {
@@ -54,8 +55,8 @@ object ParsekTable {
 
   type JavaTypeDecoder = PMap => AnyRef
 
-  def apply(schema: PStructType, keys: Seq[String]): ParsekTable =
-    new ParsekTable(new util.HashMap[util.List[String], Array[AnyRef]](), schema, keys.toArray)
+  def apply(schema: PStructType, keys: Seq[Symbol]): ParsekTable =
+    new ParsekTable(new util.HashMap[Seq[String], Array[AnyRef]](), schema, keys.toArray)
 
   def createParsekType(typeFactory: RelDataTypeFactory, dataType: PType): RelDataType = dataType match {
     case PBooleanType => typeFactory.createJavaType(classOf[Boolean])
@@ -78,7 +79,14 @@ object ParsekTable {
       case PBinaryType => bytesDecoder
       case PArrayType => vectorDecoder
       case PMapType => mapDecoder
+      case _ => throw new IllegalArgumentException(s"Type $dataType doesn't support")
     }
-    (pm: PMap) => pm.value.get(name).map(v => decoder(v).right.get.asInstanceOf[AnyRef]).orNull
+    (pm: PMap) => pm.value.get(name).map {
+      case PValue.PNull => null
+      case pv => decoder(pv) match {
+        case Right(v) => v.asInstanceOf[AnyRef]
+        case Left(err) => throw err
+      }
+    }.orNull
   }
 }
