@@ -3,13 +3,16 @@ package io.parsek.jdbc
 import java.sql.{Date, PreparedStatement, Timestamp}
 import java.time.{Instant, LocalDateTime, ZoneId}
 
+import io.parsek.PValue._
 import io.parsek.instances.DecoderInstances._
 import io.parsek.types._
-import io.parsek.{Decoder, NullValue}
+import io.parsek.{Decoder, NullValue, PValue}
 
 /**
   * @author Andrei Tupitcyn
   */
+
+trait PValueBinder extends (PValue => ParameterBinder)
 
 object PValueBinder {
   val byteBinder: PValueBinder = pure[Int]((stmt, index, x) => stmt.setByte(index, x.toByte), java.sql.Types.SMALLINT)
@@ -28,12 +31,29 @@ object PValueBinder {
   }, java.sql.Types.BLOB)
   val stringBinder: PValueBinder = pure[String]((stmt, index, x) => stmt.setString(index, x), java.sql.Types.VARCHAR)
 
-  def pure[A: Decoder](f: (PreparedStatement, Int, A) => Unit, sqlType: Int): PValueBinder = x => (stmt, index) =>
-    implicitly[Decoder[A]].apply(x) match {
-      case Right(v) => f(stmt, index, v)
-      case Left(NullValue(_)) => stmt.setNull(index, sqlType)
+  val arrayBinder: PValueBinder = new PValueBinder {
+    override def apply(pv: PValue): ParameterBinder = pv match {
+      case v: PArray =>
+        new ParameterBinder {
+          override def apply(stmt: PreparedStatement, index: Int): Unit =
+            stmt.setArray(index, stmt.getConnection.createArrayOf("NULL", v.value.map(pvalue2AnyRef).toArray))
+        }
+      case other => throw new IllegalArgumentException(s"Value $other can not be bind to array field.")
+    }
+  }
+
+  def pure[A: Decoder](f: (PreparedStatement, Int, A) => Unit, sqlType: Int): PValueBinder = new PValueBinder {
+    override def apply(pv: PValue): ParameterBinder = implicitly[Decoder[A]].apply(pv) match {
+      case Right(v) => new ParameterBinder {
+        override def apply(stmt: PreparedStatement, index: Int): Unit = f(stmt, index, v)
+      }
+      case Left(NullValue(_)) => new ParameterBinder {
+        override def apply(stmt: PreparedStatement, index: Int): Unit = stmt.setNull(index, sqlType)
+      }
       case Left(error) => throw error
     }
+  }
+
 
   def apply(sqlType: Int): PValueBinder = sqlType match {
     case java.sql.Types.BIT | java.sql.Types.SMALLINT | java.sql.Types.TINYINT | java.sql.Types.INTEGER => intBinder
@@ -43,6 +63,7 @@ object PValueBinder {
     case java.sql.Types.TIMESTAMP | java.sql.Types.TIMESTAMP_WITH_TIMEZONE => instantBinder
     case java.sql.Types.DATE => dateBinder
     case java.sql.Types.BLOB => blobBinder
+    case java.sql.Types.ARRAY => arrayBinder
     case _ => stringBinder
   }
 
@@ -54,6 +75,20 @@ object PValueBinder {
     case PInstantType => instantBinder
     case PStringType => stringBinder
     case PBinaryType => blobBinder
+    case PArrayType => arrayBinder
     case _ => stringBinder
+  }
+
+  def pvalue2AnyRef(pv: PValue): AnyRef = pv match {
+    case PNull => null
+    case PBoolean(v) => new java.lang.Boolean(v)
+    case PInt(v) => new java.lang.Integer(v)
+    case PLong(v) => new java.lang.Long(v)
+    case PString(v) => v
+    case PDouble(v) => new java.lang.Double(v)
+    case PTime(v) => java.sql.Timestamp.from(v)
+    case PBytes(v) => v
+    case PArray(v) => v.map(pvalue2AnyRef)
+    case PMap(m) => m.map { case (k, v) => k.name -> pvalue2AnyRef(v) }
   }
 }

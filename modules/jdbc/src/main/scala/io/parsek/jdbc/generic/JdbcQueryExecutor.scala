@@ -148,6 +148,7 @@ object JdbcQueryExecutor {
     case java.sql.Types.TIMESTAMP | java.sql.Types.TIMESTAMP_WITH_TIMEZONE => PInstantType
     case java.sql.Types.DATE => PInstantType
     case java.sql.Types.BLOB => PBinaryType
+    case java.sql.Types.ARRAY => PArrayType
     case _ => PStringType
   }
 }

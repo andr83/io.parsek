@@ -25,7 +25,12 @@ class QuerySpec extends FlatSpec with Matchers {
     'long_field -> PValue(9876543210L),
     'bool_field -> PValue.True,
     'time_field -> PValue(instant),
-    'string_field -> PValue("hello world!")
+    'string_field -> PValue("hello world!"),
+    'array_field -> PValue(Vector(
+      PValue.fromInt(1),
+      PValue.fromInt(2),
+      PValue.fromInt(3))
+    )
   )
 
   val r2: PMap = pmap(
@@ -33,7 +38,12 @@ class QuerySpec extends FlatSpec with Matchers {
     'long_field -> PValue(-4790L),
     'bool_field -> PValue.False,
     'time_field -> PValue(instant),
-    'string_field -> PValue("who am I?")
+    'string_field -> PValue("who am I?"),
+    'array_field -> PValue(Vector(
+      PValue.fromInt(5),
+      PValue.fromInt(6),
+      PValue.fromInt(7))
+    )
   )
 
   def withQueryExecutor(test: QueryExecutor => Unit): Unit = {
@@ -48,14 +58,15 @@ class QuerySpec extends FlatSpec with Matchers {
                            | long_field BIGINT,
                            | bool_field BOOLEAN,
                            | time_field TIMESTAMP,
-                           | string_field VARCHAR(250)
+                           | string_field VARCHAR(250),
+                           | array_field ARRAY
                            |)
         """.stripMargin)
 
       stmt.executeUpdate(
         """
-          |insert into test values (10, 9876543210, true, '2000-01-01 13:59:12', 'hello world!');
-          |insert into test values (11, -4790, false, '2000-01-01 13:59:12', 'who am I?')
+          |insert into test values (10, 9876543210, true, '2000-01-01 13:59:12', 'hello world!', (1,2,3));
+          |insert into test values (11, -4790, false, '2000-01-01 13:59:12', 'who am I?', (5,6,7))
         """.stripMargin)
 
       test(qe)
