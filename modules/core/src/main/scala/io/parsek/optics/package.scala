@@ -10,5 +10,6 @@ package object optics {
   type Prism[S, A] = PrismS[S, S, A, A]
   type Validation[S, E, A] = ValidationS[S, S, E, A, A]
   type PValidation[A] = Validation[PValue, Throwable, A]
-  type PValidationW = Validation[PValue, NonEmptyList[Throwable], (Seq[Throwable], PValue)]
+  type PValidationNel = Validation[PValue, NonEmptyList[Throwable], PValue]
+  type PValidationNelW = Validation[PValue, NonEmptyList[Throwable], (Seq[Throwable], PValue)]
 }

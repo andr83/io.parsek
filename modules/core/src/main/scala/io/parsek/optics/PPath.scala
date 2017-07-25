@@ -5,8 +5,9 @@ import java.time.Instant
 import cats.data.NonEmptyList
 import cats.syntax.either._
 import io.parsek.PValue._
+import io.parsek.implicits._
 import io.parsek.instances.DecoderInstances
-import io.parsek.{Decoder, Encoder, FilterFailure, PValue, TraverseFailure}
+import io.parsek.{PMap => _, _}
 
 import scala.language.dynamics
 
@@ -32,21 +33,30 @@ case class PPath(value: PValidation[PValue]) extends Dynamic {
 
   def arr: PValidation[Vector[PValue]] = value compose pArray
 
-  def pmap: PValidation[Map[Symbol, PValue]] = value compose pMap
-
   def bytes: PValidation[Array[Byte]] = value compose pBytes
 
-  def optional: PValidationW =
-    Validation.apply[PValue, NonEmptyList[Throwable], (Seq[Throwable], PValue)](s=> value._getOrModify(s) match {
-      case Left((error: Throwable, _: PValue)) => Right((Seq(error), PValue.Null))
-      case Right(v) => Right((Seq.empty[Throwable], v))
-    })(pw => pv => value._set(pw._2)(pv))
+  def optional: PValidationNel = opt[PValue]
 
-  def required: PValidationW =
-    Validation.apply[PValue, NonEmptyList[Throwable], (Seq[Throwable], PValue)](s=> value._getOrModify(s) match {
+  def opt[A: Decoder : Encoder]: PValidationNel =
+    Validation.apply[PValue, NonEmptyList[Throwable], PValue](s => value._getOrModify(s) match {
+      case Right(v) => implicitly[Decoder[A]].apply(v).fold(
+        error => Left(NonEmptyList(error, Nil)),
+        a => Right(implicitly[Encoder[A]].apply(a))
+      )
+      case Left((_: TraverseFailure, _: PValue)) => Right(PValue.Null)
       case Left((error: Throwable, _: PValue)) => Left(NonEmptyList(error, Nil))
-      case Right(v) => Right(Seq.empty[Throwable], v)
-    })(pw => pv => value._set(pw._2)(pv))
+    })(pw => pv => value._set(pw)(pv))
+
+  def required: PValidationNel = req[PValue]
+
+  def req[A: Decoder : Encoder]: PValidationNel =
+    Validation.apply[PValue, NonEmptyList[Throwable], PValue](s => value._getOrModify(s) match {
+      case Right(v) => implicitly[Decoder[A]].apply(v).fold(
+        error => Left(NonEmptyList(error, Nil)),
+        a => Right(implicitly[Encoder[A]].apply(a))
+      )
+      case Left((error: Throwable, _: PValue)) => Left(NonEmptyList(error, Nil))
+    })(pw => pv => value._set(pw)(pv))
 
   def at(key: Symbol): PPath = PPath(pmap compose index(key))
 
@@ -113,13 +123,12 @@ case class PPath(value: PValidation[PValue]) extends Dynamic {
     (s => value.get(s).orElse(fallback.value.get(s)))(value._set))
 
   def selectDynamic(field: String): PPath = PPath(pmap.compose(index(Symbol(field))))
+
+  def pmap: PValidation[Map[Symbol, PValue]] = value compose pMap
 }
 
 object PPath extends DecoderInstances {
   val root = PPath(Validation.id)
-
-  def validated[A: Decoder](reverseGet: A => PValue): PValidation[A] =
-    Validation(implicitly[Decoder[A]].apply)(a => _ => reverseGet(a))
 
   def pNull: PValidation[Unit] = validated[Unit](_ => Null)
 
@@ -138,6 +147,9 @@ object PPath extends DecoderInstances {
   def pArray: PValidation[Vector[PValue]] = validated[Vector[PValue]](PArray)
 
   def pMap: PValidation[Map[Symbol, PValue]] = validated[Map[Symbol, PValue]](PMap)
+
+  def validated[A: Decoder](reverseGet: A => PValue): PValidation[A] =
+    Validation(implicitly[Decoder[A]].apply)(a => _ => reverseGet(a))
 
   def pBytes: PValidation[Array[Byte]] = validated[Array[Byte]](PBytes)
 

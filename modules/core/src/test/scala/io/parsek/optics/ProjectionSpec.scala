@@ -12,8 +12,8 @@ class ProjectionSpec extends FlatSpec with Matchers {
     val p = Projection(
       'newField -> root.field1.required,
       'innerField -> Projection(
-        'inner1 -> root.field2.required,
-        'inner2 -> root.field3.required
+        'inner1 -> root.field2.req[String],
+        'inner2 -> root.field3.req[Double]
       )
     )
     val res = p(pmap(
@@ -21,12 +21,12 @@ class ProjectionSpec extends FlatSpec with Matchers {
       'field2 -> PValue("World"),
       'field3 -> PValue(16.2)
     ))
-    res shouldBe Right((Seq.empty[Throwable], pmap(
+    res shouldBe Right(pmap(
       'newField -> PValue(21),
       'innerField -> pmap(
         'inner1 -> PValue("World"),
         'inner2 -> PValue(16.2)
       )
-    )))
+    ))
   }
 }

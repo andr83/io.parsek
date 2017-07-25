@@ -2,7 +2,7 @@ import sbt._
 
 
 object Version {
-  val calcite = "1.13.0"
+  val calcite = "1.12.0"
   val cats = "0.9.0"
   val catsEffect = "0.2"
   val jackson = "2.8.8"
