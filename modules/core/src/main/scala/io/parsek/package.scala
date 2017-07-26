@@ -3,13 +3,12 @@ package io
 import java.time.Instant
 
 import cats.data.Validated.{Invalid, Valid, invalidNel, valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.ValidatedNel
 import cats.syntax.either._
 import io.parsek.PValue._
 import io.parsek.implicits._
 import io.parsek.optics.PPath
 import io.parsek.types._
-import io.parsek.instances.PMapInstances.pmapMonoid
 
 import scala.collection.mutable
 
@@ -18,7 +17,6 @@ import scala.collection.mutable
   */
 package object parsek {
   @inline val root: PPath = PPath.root
-  @inline val PMap = PValue.PMap
 
   @inline def arr(values: PValue*): PValue = PValue.arr(values: _*)
 

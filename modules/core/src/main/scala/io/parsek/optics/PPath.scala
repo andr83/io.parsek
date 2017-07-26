@@ -5,9 +5,8 @@ import java.time.Instant
 import cats.data.NonEmptyList
 import cats.syntax.either._
 import io.parsek.PValue._
+import io.parsek._
 import io.parsek.implicits._
-import io.parsek.instances.DecoderInstances
-import io.parsek.{PMap => _, _}
 
 import scala.language.dynamics
 
@@ -62,6 +61,8 @@ case class PPath(value: PValidation[PValue]) extends Dynamic {
 
   def at(key: String): PPath = PPath(pmap compose index(Symbol(key)))
 
+  def pmap: PValidation[Map[Symbol, PValue]] = value compose pMap
+
   def map[A: Decoder, B: Encoder](f: A => B): PPath = PPath(ValidationS[PValue, PValue, Throwable, PValue, PValue](
     s => value._getOrModify(s)
       .flatMap(pa =>
@@ -70,7 +71,7 @@ case class PPath(value: PValidation[PValue]) extends Dynamic {
       )
   )(value._set))
 
-  def mapT[A: Decoder, B: Encoder](f: A => Throwable Either B): PPath = PPath(ValidationS[PValue, PValue, Throwable, PValue, PValue](
+  def validate[A: Decoder, B: Encoder](f: A => Throwable Either B): PPath = PPath(ValidationS[PValue, PValue, Throwable, PValue, PValue](
     s => value._getOrModify(s)
       .flatMap(pa => {
         implicitly[Decoder[A]].apply(pa).flatMap(a => {
@@ -123,14 +124,12 @@ case class PPath(value: PValidation[PValue]) extends Dynamic {
     (s => value.get(s).orElse(fallback.value.get(s)))(value._set))
 
   def selectDynamic(field: String): PPath = PPath(pmap.compose(index(Symbol(field))))
-
-  def pmap: PValidation[Map[Symbol, PValue]] = value compose pMap
 }
 
-object PPath extends DecoderInstances {
+object PPath {
   val root = PPath(Validation.id)
 
-  def pNull: PValidation[Unit] = validated[Unit](_ => Null)
+  def pNull: PValidation[Unit] = validated[Unit](_ => PValue.Null)
 
   def pBoolean: PValidation[Boolean] = validated[Boolean](PBoolean)
 
@@ -140,6 +139,9 @@ object PPath extends DecoderInstances {
 
   def pDouble: PValidation[Double] = validated[Double](PDouble)
 
+  def validated[A: Decoder](reverseGet: A => PValue): PValidation[A] =
+    Validation(implicitly[Decoder[A]].apply)(a => _ => reverseGet(a))
+
   def pString: PValidation[String] = validated[String](PString)
 
   def pTime: PValidation[Instant] = validated[Instant](PTime)
@@ -147,9 +149,6 @@ object PPath extends DecoderInstances {
   def pArray: PValidation[Vector[PValue]] = validated[Vector[PValue]](PArray)
 
   def pMap: PValidation[Map[Symbol, PValue]] = validated[Map[Symbol, PValue]](PMap)
-
-  def validated[A: Decoder](reverseGet: A => PValue): PValidation[A] =
-    Validation(implicitly[Decoder[A]].apply)(a => _ => reverseGet(a))
 
   def pBytes: PValidation[Array[Byte]] = validated[Array[Byte]](PBytes)
 

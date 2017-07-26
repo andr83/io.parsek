@@ -39,6 +39,13 @@ trait DecoderInstances {
     case PTime(v) => Right(v.toEpochMilli)
   }
 
+  implicit val floatDecoder: Decoder[Float] = Decoder.partial[Float] {
+    case PInt(v) => Right(v.toFloat)
+    case PLong(v) => Right(v.toFloat)
+    case PDouble(v) => Either.catchNonFatal(v.toFloat)
+    case PString(v) => Either.catchNonFatal(v.toFloat)
+  }
+
   implicit val doubleDecoder: Decoder[Double] = Decoder.partial[Double] {
     case PInt(v) => Right(v.toDouble)
     case PLong(v) => Right(v.toDouble)

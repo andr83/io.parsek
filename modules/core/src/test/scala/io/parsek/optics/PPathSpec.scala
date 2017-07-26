@@ -44,13 +44,17 @@ class PPathSpec extends FlatSpec with Matchers {
     val lengthLense = root.fString.map[String, Int](_.length).int
     lengthLense.getOption(testValue) shouldBe Some(5)
 
-    root.fInt.mapT[Int, Int](v => Right(v * 10)).int.modify(_ * 10)(testValue) shouldBe expected
-    root.fInt.mapT[Int, Int](_ => Left(new RuntimeException)).int.modify(_ * 10)(testValue) shouldBe testValue
+    root.fInt.validate[Int, Int](v => Right(v * 10)).int.modify(_ * 10)(testValue) shouldBe expected
+    root.fInt.validate[Int, Int](_ => Left(new RuntimeException)).int.modify(_ * 10)(testValue) shouldBe testValue
   }
 
   it should "filter values" in {
     root.fLong.filter[Long](_ > 10).int.getOption(testValue) shouldBe Some(100)
     root.fLong.filter[Long](_ < 0).int.get(testValue) shouldBe Left(FilterFailure)
+  }
+
+  it should "direct return value" in {
+    root.fString.string(testValue) shouldBe "hello"
   }
 
   "orElse" should "return value from fallback path on primary fail" in {
