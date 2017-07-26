@@ -25,4 +25,4 @@ trait EncoderInstances {
   })
 }
 
-object EncoderInstances extends DecoderInstances
+object EncoderInstances extends EncoderInstances

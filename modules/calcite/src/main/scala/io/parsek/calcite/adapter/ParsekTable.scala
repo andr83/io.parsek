@@ -12,6 +12,7 @@ import org.apache.calcite.schema.ScannableTable
 import org.apache.calcite.schema.impl.AbstractTable
 
 import collection.JavaConverters._
+import collection.JavaConversions._
 
 /**
   * @author Andrei Tupitcyn
@@ -64,7 +65,14 @@ object ParsekTable {
     case PLongType => typeFactory.createJavaType(classOf[Long])
     case PDoubleType => typeFactory.createJavaType(classOf[Double])
     case PInstantType => typeFactory.createJavaType(classOf[java.sql.Timestamp])
+    case PDateType => typeFactory.createJavaType(classOf[java.sql.Date])
     case PStringType => typeFactory.createJavaType(classOf[String])
+    case PArrayType(innerType) => typeFactory.createArrayType(createParsekType(typeFactory, innerType), -1L)
+    case PStructType(fields) => typeFactory.createStructType(
+      new java.util.ArrayList(
+        fields.map(f=> f.name.name -> createParsekType(typeFactory, f.dataType)).toMap.asJava.entrySet()
+      )
+    )
     case _ => throw new IllegalArgumentException(s"Type $dataType doesn't support")
   }
 
@@ -76,8 +84,9 @@ object ParsekTable {
       case PDoubleType => doubleDecoder
       case PStringType => stringDecoder
       case PInstantType => timestampDecoder
+      case PDateType => sqlDateDecoder
       case PBinaryType => bytesDecoder
-      case PArrayType => vectorDecoder
+      case PArrayType(_) => vectorDecoder
       case PMapType => mapDecoder
       case _ => throw new IllegalArgumentException(s"Type $dataType doesn't support")
     }

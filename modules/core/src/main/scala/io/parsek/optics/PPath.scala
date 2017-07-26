@@ -144,7 +144,7 @@ object PPath {
 
   def pString: PValidation[String] = validated[String](PString)
 
-  def pTime: PValidation[Instant] = validated[Instant](PTime)
+  def pTime: PValidation[Instant] = validated[Instant](PInstant)
 
   def pArray: PValidation[Vector[PValue]] = validated[Vector[PValue]](PArray)
 

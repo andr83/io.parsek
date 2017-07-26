@@ -19,9 +19,13 @@ package object types {
 
   case object PInstantType extends PType
 
+  case object PDateType extends PType
+
   case object PBinaryType extends PType
 
-  case object PArrayType extends PType
+  case class PArrayType(
+    dataType: PType
+  ) extends PType
 
   case object PMapType extends PType
 

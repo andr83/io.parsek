@@ -1,11 +1,16 @@
 package io.parsek.instances
 
-import java.time.Instant
+import java.sql.Date
+import java.text.DateFormat
+import java.time.format.DateTimeFormatter
+import java.time._
 
 import cats.syntax.either._
 import io.parsek.Decoder.Result
 import io.parsek.PValue._
 import io.parsek.{Decoder, PValue}
+
+import scala.util.Try
 
 /**
   * @author Andrei Tupitcyn
@@ -36,7 +41,7 @@ trait DecoderInstances {
     case PLong(v) => Right(v)
     case PDouble(v) => Right(v.toLong)
     case PString(v) => Either.catchNonFatal(v.toLong)
-    case PTime(v) => Right(v.toEpochMilli)
+    case PInstant(v) => Right(v.toEpochMilli)
   }
 
   implicit val floatDecoder: Decoder[Float] = Decoder.partial[Float] {
@@ -62,13 +67,24 @@ trait DecoderInstances {
   }
 
   implicit val instantDecoder: Decoder[Instant] = Decoder.partial[Instant] {
-    case PTime(v) => Right(v)
+    case PInstant(v) => Right(v)
     case PLong(v) => Right(Instant.ofEpochMilli(v))
   }
 
+  implicit val zoneDateTimeDecoder: Decoder[ZonedDateTime] = new Decoder[ZonedDateTime] {
+    override def apply(v: PValue): Result[ZonedDateTime] = instantDecoder(v).map(ts=> ZonedDateTime.ofInstant(ts, ZoneId.of("UTC")))
+  }
+
   implicit val timestampDecoder: Decoder[java.sql.Timestamp] = Decoder.partial[java.sql.Timestamp] {
-    case PTime(v) => Right(java.sql.Timestamp.from(v))
+    case PInstant(v) => Right(java.sql.Timestamp.from(v))
     case PLong(v) => Right(new java.sql.Timestamp(v))
+  }
+
+  private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-mm-dd")
+  implicit val sqlDateDecoder: Decoder[java.sql.Date] = Decoder.partial[java.sql.Date] {
+    case PInstant(v) => Right(new java.sql.Date(v.toEpochMilli))
+    case PLong(v) => Right(new java.sql.Date(v))
+    case PString(v) => Either.fromTry(Try(java.sql.Date.valueOf(LocalDate.parse(v, dateFormatter))))
   }
 
   implicit val vectorDecoder: Decoder[Vector[PValue]] = Decoder.partial[Vector[PValue]] {

@@ -33,7 +33,7 @@ object ParameterBinder {
       case PLong(v) => v.toString
       case PDouble(v) => v.toString
       case PBoolean(v) => v.toString
-      case PTime(v) => v.toString
+      case PInstant(v) => v.toString
       case _ => throw new IllegalArgumentException(s"JDBC array can contain only simple values")
     }.toArray)
     stmt.setArray(index, arr)

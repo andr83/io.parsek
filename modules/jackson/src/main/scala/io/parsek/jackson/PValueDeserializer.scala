@@ -28,9 +28,9 @@ class PValueDeserializer extends JsonDeserializer[PValue]{
     case x: BinaryNode => PValue.fromBytes(x.binaryValue())
     case x: ArrayNode =>
       val it = x.elements()
-      val arr = Vector.empty[PValue]
+      var arr = Vector.empty[PValue]
       while (it.hasNext) {
-        arr :+ convert(it.next())
+        arr = arr :+ convert(it.next())
       }
       PValue.fromValues(arr)
     case x: ObjectNode =>

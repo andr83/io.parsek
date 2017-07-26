@@ -25,7 +25,7 @@ class ValidationSpec extends FlatSpec with Matchers {
       :: PStructField('fLong, PLongType)
       :: PStructField('fDouble, PDoubleType)
       :: PStructField('fString, PStringType)
-      :: PStructField('fArray, PArrayType)
+      :: PStructField('fArray, PArrayType(PIntType))
       :: Nil
   )
 

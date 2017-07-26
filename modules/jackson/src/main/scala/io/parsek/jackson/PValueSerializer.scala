@@ -25,7 +25,7 @@ class PValueSerializer(timeFormatter: InstantFormatter) extends JsonSerializer[P
       gen.writeNumber(v)
     case PString(v) =>
       gen.writeString(v)
-    case PTime(v) =>
+    case PInstant(v) =>
       timeFormatter.format(v) match {
         case Left(l) => gen.writeNumber(l)
         case Right(str) => gen.writeString(str)

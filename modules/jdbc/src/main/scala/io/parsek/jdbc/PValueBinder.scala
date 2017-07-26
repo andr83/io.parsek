@@ -75,7 +75,7 @@ object PValueBinder {
     case PInstantType => instantBinder
     case PStringType => stringBinder
     case PBinaryType => blobBinder
-    case PArrayType => arrayBinder
+    case PArrayType(_) => arrayBinder
     case _ => stringBinder
   }
 
@@ -86,7 +86,7 @@ object PValueBinder {
     case PLong(v) => new java.lang.Long(v)
     case PString(v) => v
     case PDouble(v) => new java.lang.Double(v)
-    case PTime(v) => java.sql.Timestamp.from(v)
+    case PInstant(v) => java.sql.Timestamp.from(v)
     case PBytes(v) => v
     case PArray(v) => v.map(pvalue2AnyRef)
     case PMap(m) => m.map { case (k, v) => k.name -> pvalue2AnyRef(v) }

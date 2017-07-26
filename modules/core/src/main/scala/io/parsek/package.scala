@@ -67,15 +67,19 @@ package object parsek {
       case x => implicitly[Decoder[String]].apply(x).map(PValue.fromString).toValidatedNel
     }
     case PInstantType => value match {
-      case v: PTime => valid(v)
+      case v: PInstant => valid(v)
+      case x => implicitly[Decoder[Instant]].apply(x).map(PValue.fromInstant).toValidatedNel
+    }
+    case PDateType => value match {
+      case v: PInstant => valid(v)
       case x => implicitly[Decoder[Instant]].apply(x).map(PValue.fromInstant).toValidatedNel
     }
     case PBinaryType => value match {
       case v: PBytes => valid(v)
       case x => invalidNel(TypeCastFailure(s"Can not cast value $x to PBinaryType"))
     }
-    case PArrayType => value match {
-      case v: PArray => valid(v)
+    case PArrayType(innerType) => value match {
+      case v: PArray => valid(v) //ToDo: Add inner validation
       case x => invalidNel(TypeCastFailure(s"Can not cast value $x to PArrayType"))
     }
     case PMapType => value match {
