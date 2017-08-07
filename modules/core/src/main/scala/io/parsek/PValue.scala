@@ -21,19 +21,6 @@ sealed trait PValue extends Product with Serializable with Dynamic {
 
 object PValue {
   type FieldType = (Symbol, PValue)
-  final case class PBoolean(value: Boolean) extends PValue
-  final case class PInt(value: Int) extends PValue
-  final case class PLong(value: Long) extends PValue
-  final case class PDouble(value: Double) extends PValue
-  final case class PString(value: String) extends PValue
-  final case class PInstant(value: Instant) extends PValue
-  final case class PBytes(value: Array[Byte]) extends PValue
-  final case class PArray(value: Vector[PValue]) extends PValue
-  final case class PMap(value: Map[Symbol, PValue]) extends PValue {
-    def update(k: Symbol, v: PValue): PMap = PMap(value.updated(k, v))
-  }
-  private[parsek] final case object PNull extends PValue
-
   final val Null: PValue = PNull
   final val True: PValue = PBoolean(true)
   final val False: PValue = PBoolean(false)
@@ -60,9 +47,29 @@ object PValue {
 
   final def fromInstant(v: Instant): PValue = PInstant(v)
 
-  final def fromInstant(v: Instant): PValue = PTime(v)
-
   final def fromBytes(v: Array[Byte]): PValue = PBytes(v)
 
   def apply[A : Encoder](a: A): PValue = implicitly[Encoder[A]].apply(a)
+
+  final case class PBoolean(value: Boolean) extends PValue
+
+  final case class PInt(value: Int) extends PValue
+
+  final case class PLong(value: Long) extends PValue
+
+  final case class PDouble(value: Double) extends PValue
+
+  final case class PString(value: String) extends PValue
+
+  final case class PInstant(value: Instant) extends PValue
+
+  final case class PBytes(value: Array[Byte]) extends PValue
+
+  final case class PArray(value: Vector[PValue]) extends PValue
+
+  final case class PMap(value: Map[Symbol, PValue]) extends PValue {
+    def update(k: Symbol, v: PValue): PMap = PMap(value.updated(k, v))
+  }
+
+  private[parsek] final case object PNull extends PValue
 }

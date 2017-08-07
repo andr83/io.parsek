@@ -8,7 +8,7 @@ import org.scalatest.{FlatSpec, Matchers}
   * @author Andrei Tupitcyn
   */
 class PValueSyntaxSpec extends FlatSpec with Matchers {
-  val testValue = pmap(
+  private val testValue = pmap(
     'fBool -> PValue(true),
     'fInt -> PValue(10),
     'fLong -> PValue(100L),
@@ -38,5 +38,11 @@ class PValueSyntaxSpec extends FlatSpec with Matchers {
     testValue.fDouble.double shouldBe 12.3
     testValue.fString.string shouldBe "hello"
     testValue.fArray.arr[Int] shouldBe List(1, 2, 3)
+  }
+
+  it should "apply unsafe map function" in {
+    testValue.fInt.mapUnsafe((i: Int) => i * 2).int shouldBe 20
+    testValue.fArray.mapUnsafe[Int, Int](i => i * 3).arr[Int] shouldBe List(3, 6, 9)
+    testValue.mapK[Boolean, String]((k, v) => k -> v.toString).value shouldBe testValue.update('fBool, PValue("true"))
   }
 }

@@ -1,9 +1,7 @@
 package io.parsek.instances
 
-import java.sql.Date
-import java.text.DateFormat
-import java.time.format.DateTimeFormatter
 import java.time._
+import java.time.format.DateTimeFormatter
 
 import cats.syntax.either._
 import io.parsek.Decoder.Result
@@ -68,11 +66,19 @@ trait DecoderInstances {
 
   implicit val instantDecoder: Decoder[Instant] = Decoder.partial[Instant] {
     case PInstant(v) => Right(v)
-    case PLong(v) => Right(Instant.ofEpochMilli(v))
+    case PLong(v) => Right(if (v > 100000000000L) Instant.ofEpochMilli(v) else Instant.ofEpochSecond(v))
   }
 
   implicit val zoneDateTimeDecoder: Decoder[ZonedDateTime] = new Decoder[ZonedDateTime] {
-    override def apply(v: PValue): Result[ZonedDateTime] = instantDecoder(v).map(ts=> ZonedDateTime.ofInstant(ts, ZoneId.of("UTC")))
+    override def apply(v: PValue): Result[ZonedDateTime] = instantDecoder(v).map(ts => ZonedDateTime.ofInstant(ts, ZoneOffset.UTC))
+  }
+
+  implicit val localDateTimeDecoder: Decoder[LocalDateTime] = new Decoder[LocalDateTime] {
+    override def apply(v: PValue): Result[LocalDateTime] = instantDecoder(v).map(ts => LocalDateTime.ofInstant(ts, ZoneOffset.UTC))
+  }
+
+  implicit val localDateDecoder: Decoder[LocalDate] = new Decoder[LocalDate] {
+    override def apply(v: PValue): Result[LocalDate] = instantDecoder(v).map(ts => LocalDateTime.ofInstant(ts, ZoneOffset.UTC).toLocalDate)
   }
 
   implicit val timestampDecoder: Decoder[java.sql.Timestamp] = Decoder.partial[java.sql.Timestamp] {

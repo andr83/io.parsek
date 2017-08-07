@@ -6,3 +6,4 @@ package io.parsek
 package object implicits extends syntax.PValueSyntax
   with instances.DecoderInstances
   with instances.EncoderInstances
+  with instances.PMapInstances
