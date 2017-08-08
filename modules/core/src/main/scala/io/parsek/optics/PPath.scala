@@ -93,6 +93,12 @@ case class PPath(value: PValidation[PValue]) extends Dynamic {
       })
   )(value._set))
 
+  def findAndMap[A : Decoder, B: Encoder](p: (Symbol,PValue) => Boolean, f: (Symbol,A) => (Symbol, B)): PPath = {
+    PPath(ValidationS[PValue, PValue, Throwable, PValue, PValue](
+      s => value._getOrModify(s).map(_.findAndMap(p, f))
+    )(value._set))
+  }
+
   /**
     * Memoize is a lens with caching of getting result.
     * Can be useful for getting access optimisation to source value inner fields

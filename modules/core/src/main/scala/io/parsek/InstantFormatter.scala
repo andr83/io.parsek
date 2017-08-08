@@ -6,7 +6,7 @@ import java.time.temporal.{TemporalAccessor, TemporalQuery}
 
 /**
   * @author andr83 
-  *         created on 15.05.17
+  * todo: Refactor to PValueFormatter
   */
 trait InstantFormatter {
   def format(time: Instant): Long Either String

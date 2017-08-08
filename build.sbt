@@ -49,6 +49,7 @@ def parsekModule(path: String): Project = {
         passwd = "1234mudar@"
       ),
       publishMavenStyle := true,
+
       publishTo in ThisBuild := Some("Artifactory Realm" at "https://rms.evolutiongaming.com/mvn-spark")
     )
 }

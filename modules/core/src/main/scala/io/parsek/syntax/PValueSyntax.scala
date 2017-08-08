@@ -2,7 +2,9 @@ package io.parsek.syntax
 
 
 import java.time.Instant
+import cats.syntax.either._
 
+import io.parsek.PValue.{PMap, PArray}
 import io.parsek.PValue.{PArray, PMap, PNull}
 import io.parsek.implicits._
 import io.parsek.{Decoder, Encoder, PValue, TraverseFailure}
@@ -23,7 +25,11 @@ final class PValueOps(val value: PValue) extends AnyVal {
     case other => throw TraverseFailure(s"Can not traverse to field ${key.name} in $other")
   }
 
+  def as[A: Decoder]: Either[Throwable, A] = implicitly[Decoder[A]].apply(value)
+
   def asUnsafe[A: Decoder](key: Symbol): A = implicitly[Decoder[A]].unsafe(value)
+
+  def asUnsafe[A: Decoder]: A = as[A].fold(e => throw e, identity)
 
   def opt: Option[PValue] = value match {
     case PValue.Null => None
@@ -53,10 +59,6 @@ final class PValueOps(val value: PValue) extends AnyVal {
 
   def parr: Vector[PValue] = asUnsafe[Vector[PValue]]
 
-  def asUnsafe[A: Decoder]: A = as[A].fold(e => throw e, identity)
-
-  def as[A: Decoder]: Either[Throwable, A] = implicitly[Decoder[A]].apply(value)
-
   def mapUnsafe[A: Decoder, B: Encoder](f: A => B): PValue = {
     val d = implicitly[Decoder[A]]
     val e = implicitly[Encoder[B]]
@@ -82,5 +84,33 @@ final class PValueOps(val value: PValue) extends AnyVal {
       }))
       case other => other
     }
+  }
+
+  def findAndMap[A : Decoder, B: Encoder](p: (Symbol,PValue) => Boolean, f: (Symbol,A) => (Symbol,B)): PValue = value match {
+    case pm: PMap => PValueOps.traverseAndMap(p, f)(pm)
+    case other => other
+  }
+}
+
+object PValueOps {
+  private def traverseAndMap[A : Decoder, B: Encoder](p: (Symbol,PValue) => Boolean, f: (Symbol,A) => (Symbol,B))(pm: PMap): PMap = {
+    PMap(pm.value.map{ case (k, v) =>
+      if(p(k, v)) {
+        val d = implicitly[Decoder[A]]
+        val e = implicitly[Encoder[B]]
+        d(v).fold(_=> k -> v, a=> {
+          val (kb, vb) = f(k, a)
+          kb -> e(vb)
+        })
+      } else v match {
+        case m: PMap => k -> traverseAndMap[A, B](p, f)(m)
+        case PArray(arr) =>
+          k -> PArray(arr.map {
+            case m: PMap => traverseAndMap[A, B](p, f)(m)
+            case other => other
+          })
+        case other => k -> other
+      }
+    })
   }
 }
