@@ -2,7 +2,6 @@ package io.parsek.jdbc
 
 import java.sql.{Connection, ResultSet}
 
-import io.parsek.PValue
 import io.parsek.PValue.PMap
 import io.parsek.types.PStructType
 

@@ -4,7 +4,10 @@ import java.sql.{ResultSet, ResultSetMetaData}
 import java.time.Instant
 
 import ResultSetEncoder._
+import io.parsek.PValue.PArray
 import io.parsek.{Encoder, PValue}
+
+import scala.util.Try
 
 /**
   * @author Andrei Tupitcyn
@@ -37,8 +40,10 @@ object ResultSetEncoder {
       if (rs.getObject(i) == null) {
         PValue.Null
       } else {
-        val arr = getArray(rs.getArray(i).getArray.asInstanceOf[Any])
-        PValue.fromValues(arr.map(object2PValue))
+        Try {
+          val arr = getArray(rs.getArray(i).getArray.asInstanceOf[Any])
+          PValue.fromValues(arr.map(object2PValue))
+        } getOrElse PArray(Vector.empty[PValue])
 //        val ars = rs.getArray(i).getResultSet()
 //        val decoder = resultSet2PValue(ars.getMetaData, 2)
 //        var res = Seq.empty[PValue]

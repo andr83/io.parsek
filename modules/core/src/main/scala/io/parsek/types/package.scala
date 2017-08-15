@@ -1,5 +1,7 @@
 package io.parsek
 
+import io.parsek.PValue._
+
 /**
   * @author Andrei Tupitcyn
   */
@@ -24,8 +26,12 @@ package object types {
   case object PBinaryType extends PType
 
   case class PArrayType(
-    dataType: PType
+    dataType: Option[PType] = None
   ) extends PType
+
+  object PArrayType {
+    def apply(dataType: PType): PArrayType = PArrayType(Some(dataType))
+  }
 
   case object PMapType extends PType
 
@@ -44,4 +50,35 @@ package object types {
     def apply(fields: Seq[PStructField]): PStructType = PStructType(fields.toArray)
   }
 
+  object PType {
+    def apply(value: PValue): PType = value match {
+      case _: PBoolean => PBooleanType
+      case _: PInt => PIntType
+      case _: PLong => PLongType
+      case _: PString => PStringType
+      case _: PDouble => PDoubleType
+      case _: PInstant => PInstantType
+      case _: PBytes => PBinaryType
+      case PArray(arr) => PArrayType(arr.foldLeft(arr.headOption.map(PType.apply).map(Some.apply).getOrElse(None)) {
+        case (None, _) => None
+        case (o @ Some(t), v) =>
+          if (PType(v) != t) None else o
+        })
+      case PMap(m) => PStructType(m map {
+        case  (k, v) => PStructField(k, PType(v))
+      } toSeq)
+    }
+  }
+
+  trait PValueTyped {
+    val valueType: PType
+    val value: PValue
+  }
+
+  object PValueTyped {
+    def apply(v: PValue, vType: PType): PValueTyped = new PValueTyped {
+      override val valueType = vType
+      override val value = v
+    }
+  }
 }

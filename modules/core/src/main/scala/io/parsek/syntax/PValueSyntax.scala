@@ -2,24 +2,30 @@ package io.parsek.syntax
 
 
 import java.time.Instant
-import cats.syntax.either._
 
-import io.parsek.PValue.{PMap, PArray}
-import io.parsek.PValue.{PArray, PMap, PNull}
+import io.parsek.PValue._
 import io.parsek.implicits._
-import io.parsek.{Decoder, Encoder, PValue, TraverseFailure}
+import io.parsek.types.{PValueTyped, _}
+import io.parsek._
 
 import scala.language.implicitConversions
 
 
 trait PValueSyntax {
   implicit final def pvalueSyntaxOps(v: PValue): PValueOps = new PValueOps(v)
+  implicit final def pvalueWithType(value: PValue): PValueTyped = value match {
+    case _: PInt => new PValueTyped {
+      override val valueType: PType = PIntType
+      override val value: PValue = value
+    }
+  }
 }
 
 /**
   * @author Andrei Tupitcyn
   */
 final class PValueOps(val value: PValue) extends AnyVal {
+  self =>
   def as[A: Decoder](key: Symbol): Either[Throwable, A] = value match {
     case PMap(map) => implicitly[Decoder[A]].apply(map.getOrElse(key, PValue.Null))
     case other => throw TraverseFailure(s"Can not traverse to field ${key.name} in $other")
@@ -90,6 +96,10 @@ final class PValueOps(val value: PValue) extends AnyVal {
     case pm: PMap => PValueOps.traverseAndMap(p, f)(pm)
     case other => other
   }
+
+  def typed: PValueTyped = PValueTyped(value, PType(value))
+
+  def withType(t: PType): PValueTyped = PValueTyped(value, t)
 }
 
 object PValueOps {

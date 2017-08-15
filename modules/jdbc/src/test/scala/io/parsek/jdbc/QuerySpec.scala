@@ -8,6 +8,8 @@ import io.parsek.PValue.PMap
 import io.parsek._
 import io.parsek.implicits._
 import io.parsek.jdbc.generic.JdbcQueryExecutor
+import io.parsek.jdbc.generic.implicits._
+import io.parsek.types.{PArrayType, PIntType}
 import org.scalatest.{FlatSpec, Matchers}
 
 /**
@@ -87,7 +89,7 @@ class QuerySpec extends FlatSpec with Matchers {
       val res = sql"select * from test where int_field = 10".as[Int](1)
       res shouldBe 10
 
-      val res2 = sql"select * from test where int_field = 10".row
+      val res2 = sql"select * from test where int_field = ?".on(10).row
       res2 shouldBe r1
 
       val res3 = sql"select * from test".list
@@ -110,6 +112,10 @@ class QuerySpec extends FlatSpec with Matchers {
       qe.insert("TEST", r2)
       val res4 = sql"select * from test".list
       res4 shouldBe r1 :: r2 :: Nil
+
+      sql"insert into test(int_field, array_field) values (${r1.int_field}, ${r1.array_field})".execute
+      val res5 = sql"select count(1) from test".as[Int](1)
+      res5 shouldBe 3
     }
   }
 

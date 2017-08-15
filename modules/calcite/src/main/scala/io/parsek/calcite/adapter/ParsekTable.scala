@@ -67,7 +67,7 @@ object ParsekTable {
     case PInstantType => typeFactory.createJavaType(classOf[java.sql.Timestamp])
     case PDateType => typeFactory.createJavaType(classOf[java.sql.Date])
     case PStringType => typeFactory.createJavaType(classOf[String])
-    case PArrayType(innerType) => typeFactory.createArrayType(createParsekType(typeFactory, innerType), -1L)
+    case PArrayType(innerType) => typeFactory.createArrayType(createParsekType(typeFactory, innerType.getOrElse(PStringType)), -1L)
     case PStructType(fields) => typeFactory.createStructType(
       new java.util.ArrayList(
         fields.map(f=> f.name.name -> createParsekType(typeFactory, f.dataType)).toMap.asJava.entrySet()

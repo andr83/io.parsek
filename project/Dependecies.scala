@@ -7,6 +7,7 @@ object Version {
   val catsEffect = "0.2"
   val jackson = "2.8.8"
   val h2 = "1.4.195"
+  val scalaArm = "2.0"
   val scalaMeter = "0.8.2"
   val scalaTest = "3.0.1"
 }
@@ -21,6 +22,8 @@ object Library {
     "com.fasterxml.jackson.core" % "jackson-core" % Version.jackson,
     "com.fasterxml.jackson.module" %% "jackson-module-scala" % Version.jackson
   )
+  val scalaArm = "com.jsuereth" % "scala-arm_2.11"% Version.scalaArm
+
   val h2 =  "com.h2database" % "h2" % Version.h2
   val scalaMeter = "com.storm-enroute" % "scalameter_2.11" % Version.scalaMeter % "test"
   val scalaTest = "org.scalatest" %% "scalatest" % Version.scalaTest % "test"

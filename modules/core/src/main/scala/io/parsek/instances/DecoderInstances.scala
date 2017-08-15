@@ -115,6 +115,14 @@ trait DecoderInstances {
       case _ => implicitly[Decoder[A]].apply(v).map(Some.apply)
     }
   }
+
+  implicit def traversableDecoder[A : Decoder, T <: Traversable[A]]: Decoder[Vector[A]] = new Decoder[Vector[A]] {
+    override def apply(v: PValue): Result[Vector[A]] = v match {
+      case PArray(arr) =>
+        val decoder = implicitly[Decoder[A]]
+        Either.catchNonFatal(arr.map(decoder.unsafe))
+    }
+  }
 }
 
 object DecoderInstances extends DecoderInstances
