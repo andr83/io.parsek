@@ -1,5 +1,8 @@
 package io.parsek.optics
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
 import io.parsek.implicits._
 import io.parsek.{PValue, pmap}
 import org.scalatest.{FlatSpec, Matchers}
@@ -8,12 +11,15 @@ import org.scalatest.{FlatSpec, Matchers}
   * @author Andrei Tupitcyn
   */
 class PValueSyntaxSpec extends FlatSpec with Matchers {
+  private val today = LocalDate.now()
+
   private val testValue = pmap(
     'fBool -> PValue(true),
     'fInt -> PValue(10),
     'fLong -> PValue(100L),
     'fDouble -> PValue(12.3),
     'fString -> PValue("hello"),
+    'fDate -> PValue(today),
     'fArray -> PValue(List(1, 2, 3))
   )
 
@@ -28,6 +34,8 @@ class PValueSyntaxSpec extends FlatSpec with Matchers {
     testValue.at('fLong).long shouldBe 100L
     testValue.at('fDouble).double shouldBe 12.3
     testValue.at('fString).string shouldBe "hello"
+    testValue.at('fDate).localDate shouldBe today
+    testValue.at('fDate).string shouldBe DateTimeFormatter.ISO_LOCAL_DATE.format(today)
     testValue.at('fArray).arr[Int] shouldBe List(1, 2, 3)
   }
 
@@ -37,6 +45,7 @@ class PValueSyntaxSpec extends FlatSpec with Matchers {
     testValue.fLong.long shouldBe 100L
     testValue.fDouble.double shouldBe 12.3
     testValue.fString.string shouldBe "hello"
+    testValue.fDate.localDate shouldBe today
     testValue.fArray.arr[Int] shouldBe List(1, 2, 3)
   }
 

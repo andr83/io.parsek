@@ -86,7 +86,7 @@ object ResultSetEncoder {
       if (rs.getObject(i) == null) {
         PValue.Null
       } else {
-        PValue.fromInstant(Instant.ofEpochMilli(rs.getDate(i).getTime))
+        PValue.fromLocalDate(rs.getDate(i).toLocalDate)
       }
     case java.sql.Types.BLOB => rs: ResultSet =>
       if (rs.getObject(i) == null) {
@@ -113,6 +113,7 @@ object ResultSetEncoder {
     case x: java.lang.Long => PValue.fromLong(x)
     case x: java.lang.Number => PValue.fromDouble(x.doubleValue())
     case x: java.sql.Timestamp => PValue.fromInstant(x.toInstant)
+    case x: java.sql.Date => PValue.fromLocalDate(x.toLocalDate)
     case null => PValue.Null
     case x => PValue.fromString(x.toString)
   }

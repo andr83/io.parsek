@@ -2,9 +2,6 @@ package io.parsek
 
 import java.sql.{JDBCType, PreparedStatement}
 
-import io.parsek.PValue.PBoolean
-import io.parsek.types.PType
-
 import scala.language.implicitConversions
 
 /**
@@ -14,14 +11,8 @@ package object jdbc {
 
   trait ToSql[A] extends (A => (String, Int))
 
-  object ToSql {
-    implicit def defaultToSql[A] = new ToSql[A] {
-      override def apply(a: A): (String, Int) = ("?", 1)
-    }
-  }
-
   trait ParameterBinder {
-    def bind(stmt: PreparedStatement, index: Int): Unit
+    def bind(stmt: PreparedStatement, index: Int): Int
   }
 
   trait ValueBinder[A] extends (A => ParameterBinder)
@@ -32,16 +23,19 @@ package object jdbc {
     @inline def nullParameterBinder[A : ParameterTypeMeta]: ParameterBinder = {
       val sqlType = implicitly[ParameterTypeMeta[A]].jdbcType
       new ParameterBinder {
-        def bind(stmt: PreparedStatement, index: Int): Unit = stmt.setNull(index, sqlType)
+        def bind(stmt: PreparedStatement, index: Int): Int = {
+          stmt.setNull(index, sqlType)
+          index + 1
+        }
       }
     }
 
-    @inline def pure[A : ParameterTypeMeta](f: (PreparedStatement, Int, A) => Unit): ValueBinder[A] = {
+    @inline def pure[A : ParameterTypeMeta](f: (PreparedStatement, Int, A) => Int): ValueBinder[A] = {
       new ValueBinder[A] {
         override def apply(a: A): ParameterBinder =
           if (a == null) nullParameterBinder[A] else {
             new ParameterBinder {
-              def bind(stmt: PreparedStatement, index: Int): Unit = f(stmt, index, a)
+              def bind(stmt: PreparedStatement, index: Int): Int = f(stmt, index, a)
             }
           }
       }
@@ -87,12 +81,26 @@ package object jdbc {
     }
   }
 
-  final class PlaceholderValueBinder(binder: ParameterBinder, toSql: (String, Int)) extends ParameterBinder {
-    def bind(stmt: PreparedStatement, index: Int): Unit = binder.bind(stmt, index)
+  final class PlaceholderValueBinder(binder: ParameterBinder, val toSql: (String, Int)) extends ParameterBinder {
+    def bind(stmt: PreparedStatement, index: Int): Int = binder.bind(stmt, index)
   }
 
   implicit class SqlHelper(val sc: StringContext) extends AnyVal {
-    def sql(args: PlaceholderValueBinder*): Query = Query(sc.parts.mkString(" ? "), args)
+    def sql(binders: PlaceholderValueBinder*): Query = {
+      val (_, builder) = sc.parts.foldLeft(0 -> StringBuilder.newBuilder) {
+        case ((index, sb), part) =>
+          if (index < binders.length) {
+            val (fragment, _) = binders(index).toSql
+            sb
+              .append(part)
+              .append(fragment)
+          } else {
+            sb.append(part)
+          }
+          index + 1 -> sb
+      }
+      Query(builder.toString,binders)
+    }
   }
 
   implicit def convert2ToSql[A: ToSql](a: A): ToSql[A] = implicitly[ToSql[A]]
@@ -101,6 +109,11 @@ package object jdbc {
 
   implicit def convert2PlaceholderValueBinder[A: ToSql : ValueBinder](a: A): PlaceholderValueBinder =
     new PlaceholderValueBinder(implicitly[ValueBinder[A]].apply(a), implicitly[ToSql[A]].apply(a))
+
+  implicit def convert2OptPlaceholderValueBinder[A: ToSql : ValueBinder](o: Option[A]): Option[PlaceholderValueBinder] = o match {
+    case Some(a) => Some(convert2PlaceholderValueBinder(a))
+    case None => None
+  }
 
 
   type NameConverter = String => String

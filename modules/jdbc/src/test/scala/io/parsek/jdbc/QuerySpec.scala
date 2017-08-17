@@ -2,14 +2,13 @@ package io.parsek.jdbc
 
 import java.sql.DriverManager
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDateTime, ZoneId}
+import java.time.{LocalDate, LocalDateTime, ZoneId}
 
 import io.parsek.PValue.PMap
 import io.parsek._
 import io.parsek.implicits._
 import io.parsek.jdbc.generic.JdbcQueryExecutor
 import io.parsek.jdbc.generic.implicits._
-import io.parsek.types.{PArrayType, PIntType}
 import org.scalatest.{FlatSpec, Matchers}
 
 /**
@@ -22,11 +21,15 @@ class QuerySpec extends FlatSpec with Matchers {
     .atZone(ZoneId.systemDefault())
     .toInstant
 
+  val today = LocalDate.now
+  val yesterday = LocalDate.now().minusDays(1)
+
   val r1: PMap = pmap(
     'int_field -> PValue(10),
     'long_field -> PValue(9876543210L),
     'bool_field -> PValue.True,
     'time_field -> PValue(instant),
+    'date_field -> PValue(today),
     'string_field -> PValue("hello world!"),
     'array_field -> PValue(Vector(
       PValue.fromInt(1),
@@ -40,6 +43,7 @@ class QuerySpec extends FlatSpec with Matchers {
     'long_field -> PValue(-4790L),
     'bool_field -> PValue.False,
     'time_field -> PValue(instant),
+    'date_field -> PValue(yesterday),
     'string_field -> PValue("who am I?"),
     'array_field -> PValue(Vector(
       PValue.fromInt(5),
@@ -60,16 +64,15 @@ class QuerySpec extends FlatSpec with Matchers {
                            | long_field BIGINT,
                            | bool_field BOOLEAN,
                            | time_field TIMESTAMP,
+                           | date_field DATE,
                            | string_field VARCHAR(250),
                            | array_field ARRAY
                            |)
         """.stripMargin)
+      stmt.close()
 
-      stmt.executeUpdate(
-        """
-          |insert into test values (10, 9876543210, true, '2000-01-01 13:59:12', 'hello world!', (1,2,3));
-          |insert into test values (11, -4790, false, '2000-01-01 13:59:12', 'who am I?', (5,6,7))
-        """.stripMargin)
+      qe.insert("TEST", r1)
+      qe.insert("TEST", r2)
 
       test(qe)
     } finally {
@@ -80,7 +83,7 @@ class QuerySpec extends FlatSpec with Matchers {
   "Query" should "be created from string interpolation" in {
     val min = 10
     val q = sql"select * from test where int_field > $min"
-    q.sql shouldBe "select * from test where int_field >  ? "
+    q.sql shouldBe "select * from test where int_field > ?"
     q.params.size shouldBe 1
   }
 
@@ -89,11 +92,17 @@ class QuerySpec extends FlatSpec with Matchers {
       val res = sql"select * from test where int_field = 10".as[Int](1)
       res shouldBe 10
 
-      val res2 = sql"select * from test where int_field = ?".on(10).row
-      res2 shouldBe r1
+      val res2 = sql"select * from test where int_field in (?)".bind(Seq(10, 11)).list
+      res2 shouldBe r1 :: r2 :: Nil
 
-      val res3 = sql"select * from test".list
+      val res3 = sql"select * from test where int_field in (${Seq(10, 11)})".list
       res3 shouldBe r1 :: r2 :: Nil
+
+      val res4 = sql"select * from test".list
+      res4 shouldBe r1 :: r2 :: Nil
+
+      val res5 = sql"select * from test where int_field = ?".bindOpt(Some(10), None).row
+      res5 shouldBe r1
     }
   }
 

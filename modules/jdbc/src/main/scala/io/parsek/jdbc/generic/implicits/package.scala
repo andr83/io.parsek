@@ -6,5 +6,6 @@ package io.parsek.jdbc.generic
   */
 package object implicits
   extends instances.ValueBinderInstances
+  with instances.ToSqlInstances
   with syntax.DataSourceSyntax
 

@@ -27,8 +27,7 @@ class  JdbcQueryExecutor(
       var i = 1
       val it = query.params.iterator
       while (it.hasNext) {
-        it.next().bind(stmt, i)
-        i += 1
+        i = it.next().bind(stmt, i)
       }
       f(stmt.executeQuery())
     }
@@ -42,8 +41,7 @@ class  JdbcQueryExecutor(
       var i = 1
       val it = query.params.iterator
       while (it.hasNext) {
-        it.next().bind(stmt, i)
-        i += 1
+        i = it.next().bind(stmt, i)
       }
       stmt.execute()
     }
@@ -62,8 +60,7 @@ class  JdbcQueryExecutor(
         val paramsIt = it.next().iterator
         var i = 1
         while (paramsIt.hasNext) {
-          paramsIt.next().bind(stmt, i)
-          i += 1
+          i = paramsIt.next().bind(stmt, i)
         }
         stmt.addBatch()
       }
@@ -101,8 +98,7 @@ class  JdbcQueryExecutor(
       var i = 1
       val it = query.params.iterator
       while (it.hasNext) {
-        it.next().bind(stmt, i)
-        i += 1
+        i = it.next().bind(stmt, i)
       }
       stmt.executeUpdate()
     }
@@ -153,7 +149,7 @@ object JdbcQueryExecutor {
     case java.sql.Types.FLOAT | java.sql.Types.DOUBLE | java.sql.Types.REAL | java.sql.Types.DECIMAL => PDoubleType
     case java.sql.Types.BOOLEAN => PBooleanType
     case java.sql.Types.TIMESTAMP | java.sql.Types.TIMESTAMP_WITH_TIMEZONE => PInstantType
-    case java.sql.Types.DATE => PInstantType
+    case java.sql.Types.DATE => PDateType
     case java.sql.Types.BLOB => PBinaryType
     case java.sql.Types.ARRAY => PArrayType()
     case _ => PStringType

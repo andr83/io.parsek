@@ -23,10 +23,10 @@ class JsonSpec extends FlatSpec with Matchers {
     val now = Instant.now()
     val value = pmap('time -> PValue.fromInstant(now))
 
-    val formatter = InstantFormatter("yyyy-mm-dd")
+    val formatter = PValueFormatter("yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd")
     val serde = JsonSerDe(formatter)
     val json = serde.write(value)
 
-    json shouldBe s"""{"time":"${formatter.format(now).right.get}"}"""
+    json shouldBe s"""{"time":"${formatter.formatInstant(now).right.get}"}"""
   }
 }

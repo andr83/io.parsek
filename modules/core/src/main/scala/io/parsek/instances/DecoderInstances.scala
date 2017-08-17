@@ -8,6 +8,7 @@ import io.parsek.Decoder.Result
 import io.parsek.PValue._
 import io.parsek.{Decoder, PValue}
 
+import scala.reflect.ClassTag
 import scala.util.Try
 
 /**
@@ -62,6 +63,8 @@ trait DecoderInstances {
     case PLong(v) => Right(v.toString)
     case PDouble(v) => Right(v.toString)
     case PBoolean(v) => Right(v.toString)
+    case PInstant(v) => Right(DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.ofInstant(v, ZoneId.systemDefault())))
+    case PDate(v) => Right(DateTimeFormatter.ISO_LOCAL_DATE.format(v))
   }
 
   implicit val instantDecoder: Decoder[Instant] = Decoder.partial[Instant] {
@@ -77,8 +80,9 @@ trait DecoderInstances {
     override def apply(v: PValue): Result[LocalDateTime] = instantDecoder(v).map(ts => LocalDateTime.ofInstant(ts, ZoneOffset.UTC))
   }
 
-  implicit val localDateDecoder: Decoder[LocalDate] = new Decoder[LocalDate] {
-    override def apply(v: PValue): Result[LocalDate] = instantDecoder(v).map(ts => LocalDateTime.ofInstant(ts, ZoneOffset.UTC).toLocalDate)
+  implicit val localDateDecoder: Decoder[LocalDate] = Decoder.partial[LocalDate] {
+    case PDate(v) => Right(v)
+    case PInstant(v) => Right(LocalDateTime.ofInstant(v, ZoneId.systemDefault()).toLocalDate)
   }
 
   implicit val timestampDecoder: Decoder[java.sql.Timestamp] = Decoder.partial[java.sql.Timestamp] {
@@ -88,6 +92,7 @@ trait DecoderInstances {
 
   private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-mm-dd")
   implicit val sqlDateDecoder: Decoder[java.sql.Date] = Decoder.partial[java.sql.Date] {
+    case PDate(v) => Right(java.sql.Date.valueOf(v))
     case PInstant(v) => Right(new java.sql.Date(v.toEpochMilli))
     case PLong(v) => Right(new java.sql.Date(v))
     case PString(v) => Either.fromTry(Try(java.sql.Date.valueOf(LocalDate.parse(v, dateFormatter))))
@@ -121,6 +126,7 @@ trait DecoderInstances {
       case PArray(arr) =>
         val decoder = implicitly[Decoder[A]]
         Either.catchNonFatal(arr.map(decoder.unsafe))
+      case other => Left(new IllegalStateException(s"Can not traverse over ${other.getClass}. Expected PArray."))
     }
   }
 }

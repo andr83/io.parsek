@@ -2,7 +2,7 @@ package io.parsek.jackson
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import cats.syntax.either._
-import io.parsek.{InstantFormatter, PValue}
+import io.parsek.{PValue, PValueFormatter}
 import io.parsek.serde.SerDe
 
 /**
@@ -19,7 +19,7 @@ case class JsonSerDe(mapper: ObjectMapper) extends SerDe{
 }
 
 object JsonSerDe {
-  def apply(): JsonSerDe = JsonSerDe(InstantFormatter())
-  def apply(timeFormatter: InstantFormatter): JsonSerDe =
-    JsonSerDe(new ObjectMapper().registerModule(new ParsekModule(timeFormatter)))
+  def apply(): JsonSerDe = JsonSerDe(PValueFormatter())
+  def apply(formatter: PValueFormatter): JsonSerDe =
+    JsonSerDe(new ObjectMapper().registerModule(new ParsekModule(formatter)))
 }

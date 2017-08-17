@@ -1,7 +1,7 @@
 package io.parsek.syntax
 
 
-import java.time.Instant
+import java.time.{Instant, LocalDate}
 
 import io.parsek.PValue._
 import io.parsek.implicits._
@@ -13,12 +13,6 @@ import scala.language.implicitConversions
 
 trait PValueSyntax {
   implicit final def pvalueSyntaxOps(v: PValue): PValueOps = new PValueOps(v)
-  implicit final def pvalueWithType(value: PValue): PValueTyped = value match {
-    case _: PInt => new PValueTyped {
-      override val valueType: PType = PIntType
-      override val value: PValue = value
-    }
-  }
 }
 
 /**
@@ -55,6 +49,8 @@ final class PValueOps(val value: PValue) extends AnyVal {
   def string: String = asUnsafe[String]
 
   def instant: Instant = asUnsafe[Instant]
+
+  def localDate: LocalDate = asUnsafe[LocalDate]
 
   def bytes: Array[Byte] = asUnsafe[Array[Byte]]
 

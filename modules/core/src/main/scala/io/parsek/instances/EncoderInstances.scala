@@ -1,6 +1,6 @@
 package io.parsek.instances
 
-import java.time.Instant
+import java.time.{Instant, LocalDate}
 
 import io.parsek.{Encoder, PValue}
 
@@ -17,6 +17,7 @@ trait EncoderInstances {
   implicit val doubleEncoder: Encoder[Double] = Encoder.pure[Double](PValue.fromDouble)
   implicit val stringEncoder: Encoder[String] = Encoder.pure[String](PValue.fromString)
   implicit val instantEncoder: Encoder[Instant] = Encoder.pure[Instant](PValue.fromInstant)
+  implicit val localDateEncoder: Encoder[LocalDate] = Encoder.pure[LocalDate](PValue.fromLocalDate)
   implicit def traversableEncoder[A, C[A] <: Iterable[A]](implicit e: Encoder[A]): Encoder[C[A]] = Encoder.pure[C[A]](it => {
     PValue.fromValues(it.map(e.apply))
   })

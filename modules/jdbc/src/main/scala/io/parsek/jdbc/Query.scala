@@ -9,17 +9,31 @@ import io.parsek.{Decoder, PValue}
   */
 case class Query(sql: String, params: Iterable[ParameterBinder] = Seq.empty[ParameterBinder]) {
 
-  def withParams(params: Iterable[Any])(implicit binder: ValueBinder[Any]): Query = this.copy(sql, params.map(binder.apply))
+  private val questionMarkRegex = "[^\\?\"']+|\"([^\"]*)\"|'([^']*)'".r
+  private def buildQuery(sql: String, binders: Seq[PlaceholderValueBinder]): Query = {
+    val parts = for(
+      m <- questionMarkRegex.findAllMatchIn(sql)
+    ) yield {
+      m.group(0)
+    }
 
-  def on[A1 : ValueBinder](a1: A1): Query = this.copy(sql, params.toSeq :+ implicitly[ValueBinder[A1]].apply(a1))
-  def on[A1 : ValueBinder, A2 : ValueBinder](a1: A1, a2: A2): Query = this.copy(sql, params.toSeq ++ Seq(implicitly[ValueBinder[A1]].apply(a1), implicitly[ValueBinder[A2]].apply(a2)))
-  def on[A1 : ValueBinder, A2 : ValueBinder, A3 : ValueBinder](a1: A1, a2: A2, a3: A3): Query = this.copy(sql, params.toSeq ++ Seq(implicitly[ValueBinder[A1]].apply(a1), implicitly[ValueBinder[A2]].apply(a2), implicitly[ValueBinder[A3]].apply(a3)))
-  def on[A1 : ValueBinder, A2 : ValueBinder, A3 : ValueBinder, A4 : ValueBinder](a1: A1, a2: A2, a3: A3, a4: A4): Query = this.copy(sql, params.toSeq ++ Seq(implicitly[ValueBinder[A1]].apply(a1), implicitly[ValueBinder[A2]].apply(a2), implicitly[ValueBinder[A3]].apply(a3), implicitly[ValueBinder[A4]].apply(a4)))
-  def on[A1 : ValueBinder, A2 : ValueBinder, A3 : ValueBinder, A4 : ValueBinder, A5 : ValueBinder](a1: A1, a2: A2, a3: A3, a4: A4, a5: A5): Query = this.copy(sql, params.toSeq ++ Seq(implicitly[ValueBinder[A1]].apply(a1), implicitly[ValueBinder[A2]].apply(a2), implicitly[ValueBinder[A3]].apply(a3), implicitly[ValueBinder[A4]].apply(a4),implicitly[ValueBinder[A5]].apply(a5)))
-  def on[A1 : ValueBinder, A2 : ValueBinder, A3 : ValueBinder, A4 : ValueBinder, A5 : ValueBinder, A6 : ValueBinder](a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6): Query = this.copy(sql, params.toSeq ++ Seq(implicitly[ValueBinder[A1]].apply(a1), implicitly[ValueBinder[A2]].apply(a2), implicitly[ValueBinder[A3]].apply(a3), implicitly[ValueBinder[A4]].apply(a4),implicitly[ValueBinder[A5]].apply(a5), implicitly[ValueBinder[A6]].apply(a6)))
-  def on[A1 : ValueBinder, A2 : ValueBinder, A3 : ValueBinder, A4 : ValueBinder, A5 : ValueBinder, A6 : ValueBinder, A7 : ValueBinder](a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7): Query = this.copy(sql, params.toSeq ++ Seq(implicitly[ValueBinder[A1]].apply(a1), implicitly[ValueBinder[A2]].apply(a2), implicitly[ValueBinder[A3]].apply(a3), implicitly[ValueBinder[A4]].apply(a4),implicitly[ValueBinder[A5]].apply(a5), implicitly[ValueBinder[A6]].apply(a6), implicitly[ValueBinder[A7]].apply(a7)))
-  def on[A1 : ValueBinder, A2 : ValueBinder, A3 : ValueBinder, A4 : ValueBinder, A5 : ValueBinder, A6 : ValueBinder, A7 : ValueBinder, A8 : ValueBinder](a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8): Query = this.copy(sql, params.toSeq ++ Seq(implicitly[ValueBinder[A1]].apply(a1), implicitly[ValueBinder[A2]].apply(a2), implicitly[ValueBinder[A3]].apply(a3), implicitly[ValueBinder[A4]].apply(a4),implicitly[ValueBinder[A5]].apply(a5), implicitly[ValueBinder[A6]].apply(a6), implicitly[ValueBinder[A7]].apply(a7), implicitly[ValueBinder[A8]].apply(a8)))
-  def on[A1 : ValueBinder, A2 : ValueBinder, A3 : ValueBinder, A4 : ValueBinder, A5 : ValueBinder, A6 : ValueBinder, A7 : ValueBinder, A8 : ValueBinder, A9 : ValueBinder](a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9): Query = this.copy(sql, params.toSeq ++ Seq(implicitly[ValueBinder[A1]].apply(a1), implicitly[ValueBinder[A2]].apply(a2), implicitly[ValueBinder[A3]].apply(a3), implicitly[ValueBinder[A4]].apply(a4),implicitly[ValueBinder[A5]].apply(a5), implicitly[ValueBinder[A6]].apply(a6), implicitly[ValueBinder[A7]].apply(a7), implicitly[ValueBinder[A8]].apply(a8), implicitly[ValueBinder[A9]].apply(a9)))
+    val (_, builder) = parts.foldLeft(0 -> StringBuilder.newBuilder) {
+      case ((index, sb), part) =>
+        if (index < binders.length) {
+          val (fragment, _) = binders(index).toSql
+          sb
+            .append(part)
+            .append(fragment)
+        } else {
+          sb.append(part)
+        }
+        index + 1 -> sb
+    }
+    Query(builder.toString,binders)
+  }
+
+  def bind(params: PlaceholderValueBinder*): Query = buildQuery(sql, params)
+  def bindOpt(params: Option[PlaceholderValueBinder]*): Query = buildQuery(sql, params.flatten)
 
   def asList[A: Decoder](implicit qe: QueryExecutor): List[A] = {
     val d = implicitly[Decoder[A]]

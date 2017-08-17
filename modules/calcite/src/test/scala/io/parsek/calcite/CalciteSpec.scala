@@ -11,6 +11,7 @@ import io.parsek.calcite.adapter.ParsekTable
 import io.parsek.implicits._
 import io.parsek.jdbc._
 import io.parsek.jdbc.generic.JdbcQueryExecutor
+import io.parsek.jdbc.generic.implicits._
 import io.parsek.types._
 import org.apache.calcite.jdbc.CalciteConnection
 import org.scalatest.{FlatSpec, Matchers}

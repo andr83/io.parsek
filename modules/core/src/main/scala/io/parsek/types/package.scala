@@ -58,6 +58,7 @@ package object types {
       case _: PString => PStringType
       case _: PDouble => PDoubleType
       case _: PInstant => PInstantType
+      case _: PDate => PDateType
       case _: PBytes => PBinaryType
       case PArray(arr) => PArrayType(arr.foldLeft(arr.headOption.map(PType.apply).map(Some.apply).getOrElse(None)) {
         case (None, _) => None
@@ -67,6 +68,7 @@ package object types {
       case PMap(m) => PStructType(m map {
         case  (k, v) => PStructField(k, PType(v))
       } toSeq)
+      case PNull => throw new IllegalStateException(s"Can not detect type for Null value")
     }
   }
 

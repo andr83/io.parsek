@@ -3,14 +3,14 @@ package io.parsek.jackson
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{JsonSerializer, SerializerProvider}
 import io.parsek.PValue._
-import io.parsek.{InstantFormatter, PValue}
+import io.parsek.{PValue, PValueFormatter}
 
 /**
   * @author Andrei Tupitcyn
   */
-class PValueSerializer(timeFormatter: InstantFormatter) extends JsonSerializer[PValue] {
+class PValueSerializer(formatter: PValueFormatter) extends JsonSerializer[PValue] {
 
-  def this() = this(InstantFormatter())
+  def this() = this(PValueFormatter())
 
   override def serialize(value: PValue, gen: JsonGenerator, serializers: SerializerProvider): Unit = value match {
     case PNull =>
@@ -26,10 +26,11 @@ class PValueSerializer(timeFormatter: InstantFormatter) extends JsonSerializer[P
     case PString(v) =>
       gen.writeString(v)
     case PInstant(v) =>
-      timeFormatter.format(v) match {
+      formatter.formatInstant(v) match {
         case Left(l) => gen.writeNumber(l)
         case Right(str) => gen.writeString(str)
       }
+    case PDate(v) => gen.writeString(formatter.formatDate(v))
     case PBytes(v) =>
       gen.writeBinary(v)
     case PArray(v) =>

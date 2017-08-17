@@ -1,6 +1,6 @@
 package io.parsek
 
-import java.time.Instant
+import java.time.{Instant, LocalDate}
 
 import scala.language.dynamics
 
@@ -47,6 +47,8 @@ object PValue {
 
   final def fromInstant(v: Instant): PValue = PInstant(v)
 
+  final def fromLocalDate(v: LocalDate): PValue = PDate(v)
+
   final def fromBytes(v: Array[Byte]): PValue = PBytes(v)
 
   def apply[A : Encoder](a: A): PValue = implicitly[Encoder[A]].apply(a)
@@ -62,6 +64,8 @@ object PValue {
   final case class PString(value: String) extends PValue
 
   final case class PInstant(value: Instant) extends PValue
+
+  final case class PDate(value: LocalDate) extends PValue
 
   final case class PBytes(value: Array[Byte]) extends PValue
 
