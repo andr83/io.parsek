@@ -27,4 +27,5 @@ object Library {
   val h2 =  "com.h2database" % "h2" % Version.h2
   val scalaMeter = "com.storm-enroute" % "scalameter_2.11" % Version.scalaMeter % "test"
   val scalaTest = "org.scalatest" %% "scalatest" % Version.scalaTest % "test"
+  val shapeless = "com.chuusai" %% "shapeless" % "2.3.2"
 }

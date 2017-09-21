@@ -37,6 +37,15 @@ lazy val calcite = parsekModule("calcite")
   )
   .dependsOn(core, jdbc)
 
+
+lazy val shapeless = parsekModule("shapeless")
+  .settings(
+    libraryDependencies ++= Seq(
+      Library.shapeless
+    )
+  )
+  .dependsOn(core)
+
 def parsekModule(path: String): Project = {
   val id = path.split("-").reduce(_ + _.capitalize)
   Project(id, file(s"modules/$path"))
