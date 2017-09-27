@@ -26,6 +26,7 @@ lazy val jdbc = parsekModule("jdbc")
     )
   )
   .dependsOn(core)
+
 lazy val calcite = parsekModule("calcite")
   .settings(
     libraryDependencies ++= Seq(
