@@ -3,7 +3,7 @@ package io
 import java.time.Instant
 
 import cats.data.Validated.{Invalid, Valid, invalidNel, valid}
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.syntax.either._
 import io.parsek.PValue._
 import io.parsek.implicits._
@@ -16,13 +16,16 @@ import scala.collection.mutable
   * @author Andrei Tupitcyn
   */
 package object parsek {
+  type PValueT = Throwable Either PValue
+  type PValueNel = NonEmptyList[Throwable] Either PValue
+  type PValueValidatedNel = ValidatedNel[Throwable, PValue]
   @inline val root: PPath = PPath.root
 
   @inline def arr(values: PValue*): PValue = PValue.arr(values: _*)
 
   @inline def pmap(fields: PValue.FieldType*): PMap = PValue.pmap(fields: _*)
 
-  def validate(root: PMap, schema: PStructType, warnings: mutable.ArrayBuffer[Throwable] = mutable.ArrayBuffer.empty): ValidatedNel[Throwable, PValue] = {
+  def validate(root: PMap, schema: PStructType, warnings: mutable.ArrayBuffer[Throwable] = mutable.ArrayBuffer.empty): PValueValidatedNel = {
     val m = root.value
     schema.fields.map { case PStructField(name, dataType, nullable) =>
       m.get(name) match {
@@ -45,7 +48,7 @@ package object parsek {
     }.reduce(_.combine(_)).map(PValue.fromMap)
   }
 
-  def validateType(value: PValue, dataType: PType, warnings: mutable.ArrayBuffer[Throwable]): ValidatedNel[Throwable, PValue] = dataType match {
+  def validateType(value: PValue, dataType: PType, warnings: mutable.ArrayBuffer[Throwable]): PValueValidatedNel = dataType match {
     case PBooleanType => value match {
       case v: PBoolean => valid(v)
       case x => implicitly[Decoder[Boolean]].apply(x).map(PValue.fromBoolean).toValidatedNel

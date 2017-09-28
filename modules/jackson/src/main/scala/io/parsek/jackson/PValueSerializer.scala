@@ -18,11 +18,11 @@ class PValueSerializer(formatter: PValueFormatter) extends JsonSerializer[PValue
     case PBoolean(v) =>
       gen.writeBoolean(v)
     case PInt(v) =>
-      gen.writeNumber(v)
+      gen.writeNumber(formatter.formatInt(v))
     case PLong(v) =>
-      gen.writeNumber(v)
+      gen.writeNumber(formatter.formatLong(v))
     case PDouble(v) =>
-      gen.writeNumber(v)
+      gen.writeNumber(formatter.formatDouble(v))
     case PString(v) =>
       gen.writeString(v)
     case PInstant(v) =>

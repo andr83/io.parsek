@@ -21,7 +21,9 @@ case class Projection(validators: Iterable[(Symbol, PValidationNel)]) {
         val (toKey, validator) = it.next()
         validator.get(rec) match {
           case Right(v) =>
-            resSuccess += toKey -> v
+            if (v != PValue.Null) {
+              resSuccess += toKey -> v
+            }
           case Left(errList) =>
             failures += errList
         }

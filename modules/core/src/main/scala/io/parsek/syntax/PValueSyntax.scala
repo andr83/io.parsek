@@ -3,10 +3,13 @@ package io.parsek.syntax
 
 import java.time.{Instant, LocalDate}
 
+import cats.data.NonEmptyList
 import io.parsek.PValue._
 import io.parsek.implicits._
 import io.parsek.types.{PValueTyped, _}
 import io.parsek._
+
+import cats.syntax.either._
 
 import scala.language.implicitConversions
 
@@ -26,6 +29,10 @@ final class PValueOps(val value: PValue) extends AnyVal {
   }
 
   def as[A: Decoder]: Either[Throwable, A] = implicitly[Decoder[A]].apply(value)
+
+  def asNel[A: Decoder]: Either[NonEmptyList[Throwable], A] = implicitly[Decoder[A]].apply(value).leftMap(e=> NonEmptyList.of(e))
+
+  def asNel[A: Decoder](key: Symbol): Either[NonEmptyList[Throwable], A] = value.as[A](key).leftMap(e=> NonEmptyList.of(e))
 
   def asUnsafe[A: Decoder](key: Symbol): A = implicitly[Decoder[A]].unsafe(value)
 
@@ -70,6 +77,29 @@ final class PValueOps(val value: PValue) extends AnyVal {
       case PMap(map) => PMap(map.mapValues(r => e(f(d.unsafe(r)))))
       case PNull => PValue.Null
       case other => e(f(d.unsafe(other)))
+    }
+  }
+
+  def validate[A: Decoder, B: Encoder](f: A => Throwable Either B):  PValueNel = {
+    val d = implicitly[Decoder[A]]
+    val e = implicitly[Encoder[B]]
+
+    value match {
+      case PArray(arr) =>
+        val (errors, valid) = arr.map(r => d(r).flatMap(a=> f(a))).separate
+        if (errors.nonEmpty) Left(NonEmptyList.fromListUnsafe(errors.toList)) else Right(PArray(valid.map(e.apply)))
+      case PMap(map) =>
+        val (errors, valid) = map.mapValues(r => d(r).flatMap(a=> f(a))).partition(_._2.isLeft)
+        if (errors.nonEmpty)
+          Left(NonEmptyList.fromListUnsafe(errors.map(_._2.left.get).toList))
+        else
+          Right(PMap(valid.mapValues(v=> e(v.right.get))))
+      case PNull => Right(PValue.Null)
+      case other =>
+        d(other) match {
+          case Right(v) => f(v).leftMap(err=> NonEmptyList.of(err)).map(e.apply)
+          case Left(err) => Left(NonEmptyList.of(err))
+        }
     }
   }
 

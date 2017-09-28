@@ -43,6 +43,7 @@ case class PPath(value: PValidation[PValue]) extends Dynamic {
         a => Right(implicitly[Encoder[A]].apply(a))
       )
       case Left((_: TraverseFailure, _: PValue)) => Right(PValue.Null)
+      case Left((FilterFailure, _: PValue)) => Right(PValue.Null)
       case Left((error: Throwable, _: PValue)) => Left(NonEmptyList(error, Nil))
     })(pw => pv => value._set(pw)(pv))
 

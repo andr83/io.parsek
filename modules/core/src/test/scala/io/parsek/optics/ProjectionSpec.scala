@@ -29,4 +29,20 @@ class ProjectionSpec extends FlatSpec with Matchers {
       )
     ))
   }
+
+  it should "skip opt values" in {
+    val p = Projection(
+      'field1 -> root.field1.req[String],
+      'field2 -> root.field2.filter[Boolean](v=>v).opt[Boolean]
+    )
+
+    val res = p(pmap(
+      'field1 -> PValue("hello"),
+      'field2 -> PValue(false)
+    ))
+
+    res shouldBe Right(pmap(
+      'field1 -> PValue("hello")
+    ))
+  }
 }
