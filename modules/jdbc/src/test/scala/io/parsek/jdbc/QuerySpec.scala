@@ -139,4 +139,11 @@ class QuerySpec extends FlatSpec with Matchers {
       res2 shouldBe r1 :: r2 :: Nil
     }
   }
+
+  it should "work proper" in {
+    val q = Query(
+      "select * from test where id = ? and test = \"dsf?dfs\"")
+      .bind(1, 2)
+    q.sql shouldBe "select * from test where id = ? and test = \"dsf?dfs\""
+  }
 }

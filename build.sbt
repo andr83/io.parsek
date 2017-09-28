@@ -42,15 +42,6 @@ def parsekModule(path: String): Project = {
   Project(id, file(s"modules/$path"))
     .settings(
       moduleName := s"parsek-$path",
-      name := s"Parsek $id",
-      credentials += Credentials(
-        realm = "Artifactory Realm",
-        host = "rms.evolutiongaming.com",
-        userName = "atupitsin",
-        passwd = "1234mudar@"
-      ),
-      publishMavenStyle := true,
-
-      publishTo in ThisBuild := Some("Artifactory Realm" at "https://rms.evolutiongaming.com/mvn-spark")
+      name := s"Parsek $id"
     )
 }

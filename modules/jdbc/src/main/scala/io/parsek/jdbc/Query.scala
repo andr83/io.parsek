@@ -9,17 +9,13 @@ import io.parsek.{Decoder, PValue}
   */
 case class Query(sql: String, params: Iterable[ParameterBinder] = Seq.empty[ParameterBinder]) {
 
-  private val questionMarkRegex = "[^\\?\"']+|\"([^\"]*)\"|'([^']*)'".r
+  private val questionMarkRegex = "\\?(?=(([^']*?'[^']*?')*?[^']*?|([^']*?))$)".r
   private def buildQuery(sql: String, binders: Seq[PlaceholderValueBinder]): Query = {
-    val parts = for(
-      m <- questionMarkRegex.findAllMatchIn(sql)
-    ) yield {
-      m.group(0)
-    }
+    val parts = questionMarkRegex.split(sql)
 
     val (_, builder) = parts.foldLeft(0 -> StringBuilder.newBuilder) {
       case ((index, sb), part) =>
-        if (index < binders.length) {
+        if (index < binders.length && !part.startsWith("'") && !part.startsWith("\"")) {
           val (fragment, _) = binders(index).toSql
           sb
             .append(part)
