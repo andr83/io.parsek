@@ -42,7 +42,8 @@ lazy val calcite = parsekModule("calcite")
 lazy val shapeless = parsekModule("shapeless")
   .settings(
     libraryDependencies ++= Seq(
-      Library.shapeless
+      Library.shapeless,
+      Library.scalaTest
     )
   )
   .dependsOn(core)
