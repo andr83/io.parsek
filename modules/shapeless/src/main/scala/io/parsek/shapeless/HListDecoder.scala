@@ -1,4 +1,4 @@
-package io.parsek.shapeless.weak
+package io.parsek.shapeless
 
 import io.parsek.Decoder.Result
 import io.parsek.PValue.{PMap, PNull}
@@ -16,37 +16,50 @@ trait HListDecoder {
                                                                            implicit
                                                                            witness: Witness.Aux[K],
                                                                            hDecoder: Lazy[DecoderWithDefaults[H]],
-                                                                           tDecoder: Lazy[DecoderWithDefaults[T]]
+                                                                           tDecoder: Lazy[DecoderWithDefaults[T]],
+                                                                           decodeConfiguration: Configuration
                                                                          ): DecoderWithDefaults[FieldType[K, H] :: T] =
     new DecoderWithDefaults[FieldType[K, H] :: T] {
       override def apply(v: PValue, defaults: Map[Symbol, PValue]): Result[FieldType[K, H] :: T] = {
-        val headResult: Decoder.Result[FieldType[K, H]] = {
+        val headResult: Decoder.Result[(PValue, FieldType[K, H])] = {
           v match {
             case p@PMap(valuesMap) =>
-              val fieldName = witness.value
+              val fieldName = decodeConfiguration.lookUpFieldName(witness.value)
               val newPMap = PMap(valuesMap - fieldName)
               valuesMap
                 .get(fieldName)
-                .orElse(defaults.get(fieldName))
-                .orElse(Some(PNull)) // we try to decode object from PNull, it's possible, for instance, for Option[T]
+                .orElse(if (decodeConfiguration.useDefaults) defaults.get(fieldName) else None)
+                .orElse(if (decodeConfiguration.tryPNullForEmptyFields) Some(PNull) else None)
                 .map(pv => hDecoder.value(pv, defaults)
-                .right.map(shapeless.labelled.field[K].apply _))
+                  .right.map(shapeless.labelled.field[K].apply _)
+                  .right.map(newPMap -> _))
                 .getOrElse(Left(new IllegalArgumentException(s"Field $fieldName does not exist in PMap")))
             case _ => Left(new IllegalArgumentException("Case classes have to map to PMap"))
           }
         }
 
-        def buildTail = tDecoder.value.apply(v, defaults)
+        def buildTail(newPValue: PValue) = tDecoder.value.apply(newPValue, defaults)
 
-        for {
-          head <- headResult.right
-          tail <- buildTail.right
-        } yield head :: tail
+        for (
+          head <- headResult.right;
+          tail <- buildTail(head._1).right
+        ) yield head._2 :: tail
       }
     }
 
-  implicit def hNilDecoderWithDefaults: DecoderWithDefaults[HNil] = new DecoderWithDefaults[HNil] {
-    override def apply(v: PValue, defaults: Map[Symbol, PValue]): Result[HNil] = Right(HNil)
+  implicit def hNilDecoderWithDefaults(implicit decodeConfiguration: Configuration): DecoderWithDefaults[HNil] = new DecoderWithDefaults[HNil] {
+    override def apply(v: PValue, defaults: Map[Symbol, PValue]): Result[HNil] =
+      if (decodeConfiguration.allowAdditionalFields)
+        Right(HNil)
+      else
+        v match {
+          case PNull => Right(HNil)
+          case PMap(map) if map.isEmpty => Right(HNil)
+          case x => Left(new IllegalArgumentException(
+            s"Pvalue is not fully converted to case class. " +
+              s"Check your data or use io.parsek.shapeless.weak.HListDecoder to avoid this error. " +
+              s"Rest part is $x"))
+        }
   }
 
   implicit def decoderToWithDefault[T](implicit d: Decoder[T]): DecoderWithDefaults[T] = new DecoderWithDefaults[T] {
@@ -57,7 +70,8 @@ trait HListDecoder {
                                                          gen: LabelledGeneric.Aux[H, T],
                                                          td: Lazy[DecoderWithDefaults[T]],
                                                          defaults: Default.AsRecord.Aux[H, D],
-                                                         defaultEncoder: Lazy[Encoder[D]]): Decoder[H] =
+                                                         defaultEncoder: Lazy[Encoder[D]],
+                                                         decodeConfiguration: Configuration): Decoder[H] =
     new Decoder[H] {
       def apply(pValue: PValue): Decoder.Result[H] = {
         val defaultPValue: Map[Symbol, PValue] =
@@ -73,5 +87,5 @@ trait HListDecoder {
 
 }
 
-object HListDecoder extends HListDecoder
+object HListDecoder extends HListDecoder with Configuration.Weak
 
