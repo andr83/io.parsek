@@ -5,7 +5,17 @@ import io.parsek.{Encoder, PValue}
 import shapeless.labelled.FieldType
 import shapeless.{::, HList, HNil, LabelledGeneric, Lazy, Witness}
 
-trait HListEncoder {
+trait HListEncoder extends HListEncoderLowPriority {
+
+  implicit def optionEncoder[T](implicit enc: Encoder[T]): Encoder[Option[T]] = new Encoder[Option[T]] {
+    override def apply(a: Option[T]): PValue = a match {
+      case Some(x) => enc(x)
+      case None => PNull
+    }
+  }
+}
+
+trait HListEncoderLowPriority {
 
   implicit def hlistObjectEncoder[K <: Symbol, H, T <: HList](
                                                                implicit
@@ -33,6 +43,8 @@ trait HListEncoder {
                                              te: Lazy[Encoder[T]]): Encoder[H] = new Encoder[H] {
     override def apply(h: H): PValue = te.value(gen.to(h))
   }
+
+
 }
 
 object HListEncoder extends HListEncoder
