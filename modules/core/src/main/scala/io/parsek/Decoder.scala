@@ -3,10 +3,11 @@ package io.parsek
 import scala.reflect.runtime.universe.{TypeTag, typeTag}
 
 /**
- * @author Andrei Tupitcyn
- */
+  * @author Andrei Tupitcyn
+  */
 trait Decoder[A] extends Serializable {
   def apply(v: PValue): Decoder.Result[A]
+
   def unsafe(v: PValue): A = apply(v).fold(throw _, identity)
 }
 
@@ -20,4 +21,6 @@ object Decoder {
         case other => Left(TypeCastFailure(s"Can not cast value $other to ${typeTag[A].tpe}"))
       }(v)
   }
+
+  def decode[T](pv: PValue)(implicit dec: Decoder[T]): Decoder.Result[T] = dec(pv)
 }
