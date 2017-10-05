@@ -72,7 +72,7 @@ object CalciteBenchmark {
   def main(args: Array[String]): Unit = {
     val data = genValues(100000)
     val scalaNativeTime: Quantity[Double] = standardConfig measure {
-      data.filter(_.value.get('id).exists({case PInt(id) => id == 999}))
+      data.filter(_.value.get('id).exists({case PInt(id) => id == 999; case _ => sys.error("Oops")}))
     }
 
     withQueryExecutor{table=> implicit qe=>
