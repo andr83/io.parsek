@@ -3,7 +3,6 @@ package io.parsek.shapeless
 import io.parsek.Decoder.decode
 import io.parsek.PValue
 import io.parsek.PValue._
-import io.parsek.shapeless.weak.HListDecoder
 import org.scalatest.{Matchers, WordSpec}
 
 /**
