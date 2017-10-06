@@ -14,7 +14,7 @@ import cats.syntax.either._
 import scala.language.implicitConversions
 
 
-trait PValueSyntax {
+trait pvalue {
   implicit final def pvalueSyntaxOps(v: PValue): PValueOps = new PValueOps(v)
 }
 

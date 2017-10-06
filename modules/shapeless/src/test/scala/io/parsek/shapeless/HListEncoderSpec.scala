@@ -1,8 +1,10 @@
 package io.parsek.shapeless
 
-import io.parsek.{Encoder, PValue}
+import io.parsek.Encoder
 import io.parsek.PValue._
-import org.scalatest.{FlatSpec, Matchers, WordSpec}
+import io.parsek.implicits._
+import io.parsek.shapeless.implicits._
+import org.scalatest.{Matchers, WordSpec}
 
 /**
   * Created by bfattahov on 02/10/2017.
@@ -17,41 +19,31 @@ class HListEncoderSpec extends WordSpec with Matchers {
 
       val jenya = User()
 
-      import io.parsek.instances.EncoderInstances._
-      import HListEncoder._
-
-      Encoder.encode(jenya) shouldEqual {
-        PMap(Map(
+      Encoder.encode(jenya) shouldEqual pmap(
           'name -> PString("Eugene"),
           'surname -> PString("Lukashin"),
-          'address -> PMap(
-            Map('flat -> PInt(25),
-              'building -> PInt(13),
-              'city -> PString("DefaultCity"),
-              'street -> PString("3rd Builders Street"))
+          'address -> pmap(
+            'flat -> PInt(25),
+            'building -> PInt(13),
+            'city -> PString("DefaultCity"),
+            'street -> PString("3rd Builders Street")
           )
-        ))
-      }
+        )
     }
 
 
     "properly work with Option" in {
 
-      import io.parsek.instances.EncoderInstances._
-      import HListEncoder._
-
-      Encoder.encode(Some(2)) shouldEqual PInt(2)
-      Encoder.encode(Option(3)) shouldEqual PInt(3)
-      Encoder.encode(None.asInstanceOf[Option[Int]]) shouldEqual PNull
+      Some(2).toPValue shouldEqual PInt(2)
+      Option(3).toPValue shouldEqual PInt(3)
+      None.asInstanceOf[Option[Int]].toPValue shouldEqual PNull
       Encoder.encode(None) shouldEqual PNull
     }
 
     "work with case classes with Option[T]" in {
-      import io.parsek.instances.EncoderInstances._
-      import HListEncoder._
       case class CC(field: Option[Int])
 
-      Encoder.encode(CC(Some(2))) shouldEqual PValue.pmap('field -> PInt(2))
+      Encoder.encode(CC(Some(2))) shouldEqual pmap('field -> PInt(2))
     }
 
   }

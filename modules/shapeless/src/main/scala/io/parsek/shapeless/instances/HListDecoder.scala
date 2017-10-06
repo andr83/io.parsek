@@ -1,53 +1,19 @@
-package io.parsek.shapeless
+package io.parsek.shapeless.instances
 
 import io.parsek.Decoder.Result
 import io.parsek.PValue.{PMap, PNull}
-import io.parsek.{Decoder, Encoder, PValue}
-import shapeless.labelled.FieldType
-import shapeless.{::, Default, HList, HNil, LabelledGeneric, Lazy, Witness}
+import io.parsek.shapeless.Configuration
+import io.parsek._
+import cats.syntax.either._
+import _root_.shapeless.labelled.FieldType
+import _root_.shapeless.{::, Default, HList, HNil, LabelledGeneric, Lazy, Witness, labelled}
 
 trait HListDecoder {
-
   trait DecoderWithDefaults[T] {
     def apply(v: PValue, defaults: Map[Symbol, PValue]): Result[T]
   }
 
-  implicit def hlistObjectDecoderWithDefaults[K <: Symbol, H, T <: HList](
-                                                                           implicit
-                                                                           witness: Witness.Aux[K],
-                                                                           hDecoder: Lazy[DecoderWithDefaults[H]],
-                                                                           tDecoder: Lazy[DecoderWithDefaults[T]],
-                                                                           decodeConfiguration: Configuration
-                                                                         ): DecoderWithDefaults[FieldType[K, H] :: T] =
-    new DecoderWithDefaults[FieldType[K, H] :: T] {
-      override def apply(v: PValue, defaults: Map[Symbol, PValue]): Result[FieldType[K, H] :: T] = {
-        val headResult: Decoder.Result[(PValue, FieldType[K, H])] = {
-          v match {
-            case p@PMap(valuesMap) =>
-              val fieldName = decodeConfiguration.lookUpFieldName(witness.value)
-              val newPMap = PMap(valuesMap - fieldName)
-              valuesMap
-                .get(fieldName)
-                .orElse(if (decodeConfiguration.useDefaults) defaults.get(fieldName) else None)
-                .orElse(if (decodeConfiguration.tryPNullForEmptyFields) Some(PNull) else None)
-                .map(pv => hDecoder.value(pv, defaults)
-                  .right.map(shapeless.labelled.field[K].apply _)
-                  .right.map(newPMap -> _))
-                .getOrElse(Left(new IllegalArgumentException(s"Field $fieldName does not exist in PMap")))
-            case _ => Left(new IllegalArgumentException("Case classes have to map to PMap"))
-          }
-        }
-
-        def buildTail(newPValue: PValue) = tDecoder.value.apply(newPValue, defaults)
-
-        for (
-          head <- headResult.right;
-          tail <- buildTail(head._1).right
-        ) yield head._2 :: tail
-      }
-    }
-
-  implicit def hNilDecoderWithDefaults(implicit decodeConfiguration: Configuration): DecoderWithDefaults[HNil] = new DecoderWithDefaults[HNil] {
+  implicit def hnilDecoderWithDefaults(implicit decodeConfiguration: Configuration): DecoderWithDefaults[HNil] = new DecoderWithDefaults[HNil] {
     override def apply(v: PValue, defaults: Map[Symbol, PValue]): Result[HNil] =
       if (decodeConfiguration.allowAdditionalFields)
         Right(HNil)
@@ -61,6 +27,46 @@ trait HListDecoder {
               s"Rest part is $x"))
         }
   }
+
+  implicit def hlistProductDecoderWithDefaults[K <: Symbol, H, T <: HList](
+    implicit
+    witness: Witness.Aux[K],
+    hDecoder: Lazy[DecoderWithDefaults[H]],
+    tDecoder: Lazy[DecoderWithDefaults[T]],
+    decodeConfiguration: Configuration
+  ): DecoderWithDefaults[FieldType[K, H] :: T] =
+    new DecoderWithDefaults[FieldType[K, H] :: T] {
+      override def apply(v: PValue, defaults: Map[Symbol, PValue]): Result[FieldType[K, H] :: T] = {
+        val headResult: Decoder.Result[(PValue, FieldType[K, H])] = {
+          v match {
+            case p@PMap(valuesMap) =>
+              val fieldName = decodeConfiguration.lookUpFieldName(witness.value)
+              val newPMap = PMap(valuesMap - fieldName)
+              valuesMap
+                .get(fieldName)
+                .orElse(if (decodeConfiguration.useDefaults) defaults.get(fieldName) else None)
+                .orElse(if (decodeConfiguration.tryPNullForEmptyFields) Some(PNull) else None)
+                .map(pv => hDecoder.value(pv, defaults)
+                  .map(labelled.field[K].apply _)
+                  .map(newPMap -> _)
+                  .leftMap {
+                    case _: NullValue => NullField(fieldName, s"Field $fieldName does not exist in PMap")
+                    case other => other
+                  }
+                )
+                .getOrElse(Left(NullField(fieldName, s"Field $fieldName does not exist in PMap")))
+            case _ => Left(new IllegalArgumentException("Case classes have to map to PMap"))
+          }
+        }
+
+        def buildTail(newPValue: PValue) = tDecoder.value.apply(newPValue, defaults)
+
+        for (
+          head <- headResult.right;
+          tail <- buildTail(head._1).right
+        ) yield head._2 :: tail
+      }
+    }
 
   implicit def decoderToWithDefault[T](implicit d: Decoder[T]): DecoderWithDefaults[T] = new DecoderWithDefaults[T] {
     override def apply(v: PValue, defaults: Map[Symbol, PValue]): Result[T] = d.apply(v)
@@ -87,5 +93,5 @@ trait HListDecoder {
 
 }
 
-object HListDecoder extends HListDecoder with Configuration.Weak
+object HListDecoder extends HListDecoder
 

@@ -1,8 +1,9 @@
 package io.parsek.shapeless
 
-import io.parsek.Decoder.decode
 import io.parsek.PValue
 import io.parsek.PValue._
+import io.parsek.implicits._
+import io.parsek.shapeless.implicits._
 import org.scalatest.{Matchers, WordSpec}
 
 /**
@@ -12,16 +13,11 @@ class HListDecoderSpec extends WordSpec with Matchers {
 
   "HListDecoder" should {
 
-    import io.parsek.shapeless.HListDecoder._
-    import io.parsek.shapeless.HListEncoder._
-    import io.parsek.instances.DecoderInstances._
-    import io.parsek.instances.EncoderInstances._
-
     "break decoding of an Option[T]" in {
-      import io.parsek.instances.DecoderInstances._
-      decode[Option[Int]](PInt(3)) shouldEqual Right(Some(3))
-      decode[Option[Int]](PNull) shouldEqual Right(None)
-      decode[Option[Int]](PString("not int")) should be(a[Left[Throwable, _]])
+      import io.parsek.instances.decoders._
+      PInt(3).as[Option[Int]] shouldEqual Right(Some(3))
+      PNull.as[Option[Int]] shouldEqual Right(None)
+      PString("not int").as[Option[Int]] should be(a[Left[Throwable, _]])
     }
 
     "decode case classes" in {
@@ -39,71 +35,63 @@ class HListDecoderSpec extends WordSpec with Matchers {
           flat = 25)
       )
 
-      val pvalue: PValue = PMap(Map(
+      val pvalue: PValue = pmap(
         'name -> PString("Eugene"),
         'surname -> PString("Lukashin"),
-        'address -> PMap(
-          Map('flat -> PInt(25),
-            'building -> PInt(13),
-            'city -> PString("Leningrad"),
-            'street -> PString("3rd Builders Street"))
+        'address -> pmap(
+          'flat -> PInt(25),
+          'building -> PInt(13),
+          'city -> PString("Leningrad"),
+          'street -> PString("3rd Builders Street")
         )
-      ))
+      )
 
-      decode[User](pvalue) shouldEqual Right(jenya)
+      pvalue.asUnsafe[User] shouldEqual jenya
 
       case class Small(value: Int)
-      decode[Small](PValue.pmap('value -> PInt(3))) shouldEqual Right(Small(3))
+      pmap('value -> PInt(3)).asUnsafe[Small] shouldEqual Small(3)
 
       case class SmallOpt(value: Option[Int])
-      decode[SmallOpt](PValue.pmap('value -> PInt(3))) shouldEqual Right(SmallOpt(Some(3)))
+      pmap('value -> PInt(3)).asUnsafe[SmallOpt] shouldEqual SmallOpt(Some(3))
     }
 
     "decode case classes with defaults" in {
       case class A(name: String, b: Int = 4)
 
-      decode[A](PValue.pmap('name -> PString("aname"), 'b -> PInt(5))) shouldEqual Right(A("aname", 5))
-      decode[A](PValue.pmap('name -> PString("aname"))) shouldEqual Right(A("aname", b = 4))
-      decode[A](PValue.pmap('name344 -> PString("aname"))) should be(a[Left[_, _]])
+      pmap('name -> PString("aname"), 'b -> PInt(5)).asUnsafe[A] shouldEqual A("aname", 5)
+      pmap('name -> PString("aname")).asUnsafe[A] shouldEqual A("aname")
+      pmap('name344 -> PString("aname")).as[A] should be(a[Left[_, _]])
     }
 
     "decode case classes with Options" in {
       case class B(name: String, b: Option[Int] = None)
-      decode[B](PValue.pmap('name -> PString("aname"), 'b -> PInt(5))) shouldEqual Right(B("aname", Some(5)))
-      decode[B](PValue.pmap('name -> PString("aname"))) shouldEqual Right(B("aname", None))
+      pmap('name -> PString("aname"), 'b -> PInt(5)).asUnsafe[B] shouldEqual B("aname", Some(5))
+      pmap('name -> PString("aname")).as[B] shouldEqual Right(B("aname", None))
     }
   }
 
   "HListDecoder" should {
 
-    import io.parsek.shapeless.HListEncoder._
-    import io.parsek.instances.DecoderInstances._
-    import io.parsek.instances.EncoderInstances._
-
     "fail in non-matching PValues in strict Configuration" in {
-      implicit val hd = new HListDecoder with Configuration.Strict
-      import hd._
+      import Configuration.Strict._
 
       case class C(f1: String)
-      decode[C](PValue.pmap('f1 -> PString("f1"), 'unexpected -> PInt(5))) should be(a[Left[_, _]])
+      pmap('f1 -> PString("f1"), 'unexpected -> PInt(5)).as[C] should be(a[Left[_, _]])
 
       case class D(a: String, b: Option[Int])
 
-      decode[D](PValue.pmap('a -> PString("a"))) should be(a[Left[_, _]])
-      decode[D](PValue.pmap('a -> PString("a"), 'b -> PInt(45))) should be(Right(D("a", Some(45))))
+      pmap('a -> PString("a")).as[D] should be(a[Left[_, _]])
+      pmap('a -> PString("a"), 'b -> PInt(45)).asUnsafe[D] should be(D("a", Some(45)))
     }
 
     "Work with non-matching PValues in weak Configuration" in {
-      implicit val hd = new HListDecoder with Configuration.Weak
-      import hd._
-
       case class C(f1: String)
-      decode[C](PValue.pmap('f1 -> PString("f1"), 'unexpected -> PInt(5))) should be(Right(C("f1")))
+      pmap('f1 -> PString("f1"), 'unexpected -> PInt(5)).asUnsafe[C] should be(C("f1"))
 
       case class D(a: String, b: Option[Int])
 
-      decode[D](PValue.pmap('a -> PString("a"))) should be(Right(D("a", None)))
-      decode[D](PValue.pmap('a -> PString("a"), 'b -> PInt(45))) should be(Right(D("a", Some(45))))
+      pmap('a -> PString("a")).asUnsafe[D] should be(D("a", None))
+      pmap('a -> PString("a"), 'b -> PInt(45)).asUnsafe[D] should be(D("a", Some(45)))
     }
   }
 

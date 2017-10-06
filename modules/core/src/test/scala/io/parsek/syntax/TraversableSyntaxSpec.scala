@@ -2,7 +2,7 @@ package io.parsek.syntax
 
 import org.scalatest.{FlatSpec, Matchers}
 import cats.data.NonEmptyList
-import io.parsek.syntax.TraversableSyntax._
+import io.parsek.syntax.traversable._
 
 /**
   * @author andr83

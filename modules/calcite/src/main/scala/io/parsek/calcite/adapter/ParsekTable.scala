@@ -52,7 +52,7 @@ case class ParsekTable(source: util.Map[Seq[String], Array[AnyRef]], schema: PSt
 
 object ParsekTable {
 
-  import io.parsek.instances.DecoderInstances._
+  import io.parsek.instances.decoders._
 
   type JavaTypeDecoder = PMap => AnyRef
 

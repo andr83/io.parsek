@@ -7,7 +7,7 @@ import io.parsek.PValue
   * @author andr83 
   *         created on 20.06.17
   */
-trait PMapInstances {
+trait pmap {
   implicit val pmapMonoid = new Monoid[Map[Symbol, PValue]]  {
 
     def empty: Map[Symbol, PValue] = Map.empty
@@ -25,4 +25,4 @@ trait PMapInstances {
   }
 }
 
-object PMapInstances extends PMapInstances
+object pmap extends pmap

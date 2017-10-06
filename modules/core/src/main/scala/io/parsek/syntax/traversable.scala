@@ -43,7 +43,7 @@ trait TraversableSyntax0 {
   }
 }
 
-trait TraversableSyntax extends TraversableSyntax0 {
+trait traversable extends TraversableSyntax0 {
   implicit class TraversableNelEitherOps[L, R, C[_] <: Traversable[_]](underlying: C[Either[NonEmptyList[L], R]])
     (
       implicit cbfL: CanBuildFrom[Nothing, L, C[L]],
@@ -71,4 +71,4 @@ trait TraversableSyntax extends TraversableSyntax0 {
 
 }
 
-object TraversableSyntax extends TraversableSyntax
+object traversable extends traversable

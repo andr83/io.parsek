@@ -1,4 +1,4 @@
-package io.parsek.shapeless
+package io.parsek.shapeless.instances
 
 import io.parsek.PValue.{PMap, PNull}
 import io.parsek.{Encoder, PValue}

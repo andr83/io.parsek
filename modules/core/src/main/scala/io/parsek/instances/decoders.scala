@@ -14,7 +14,7 @@ import scala.util.Try
 /**
   * @author Andrei Tupitcyn
   */
-trait DecoderInstances {
+trait decoders {
   implicit val idDecoder: Decoder[PValue] = Decoder.partial[PValue] {
     case v: PValue => Right(v)
   }
@@ -131,4 +131,4 @@ trait DecoderInstances {
   }
 }
 
-object DecoderInstances extends DecoderInstances
+object decoders extends decoders

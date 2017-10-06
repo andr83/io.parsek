@@ -9,7 +9,7 @@ import scala.language.higherKinds
 /**
   * @author Andrei Tupitcyn
   */
-trait EncoderInstances {
+trait encoders {
   implicit val idEncoder: Encoder[PValue] = Encoder.pure[PValue](identity)
   implicit val booleanEncoder: Encoder[Boolean] = Encoder.pure[Boolean](PValue.fromBoolean)
   implicit val intEncoder: Encoder[Int] = Encoder.pure[Int](PValue.fromInt)
@@ -26,4 +26,4 @@ trait EncoderInstances {
   })
 }
 
-object EncoderInstances extends EncoderInstances
+object encoders extends encoders
