@@ -14,7 +14,7 @@ class HListDecoderSpec extends WordSpec with Matchers {
   "HListDecoder" should {
 
     "break decoding of an Option[T]" in {
-      import io.parsek.instances.decoders._
+      import io.parsek.instances.DecoderInstances._
       PInt(3).as[Option[Int]] shouldEqual Right(Some(3))
       PNull.as[Option[Int]] shouldEqual Right(None)
       PString("not int").as[Option[Int]] should be(a[Left[Throwable, _]])

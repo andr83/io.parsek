@@ -18,61 +18,52 @@ class PPathSpec extends FlatSpec with Matchers {
   )
 
   "PPath" should "focus" in {
-    root.at('fBool).boolean.getOption(testValue) shouldBe Some(true)
-    root.at('fInt).int.getOption(testValue) shouldBe Some(10)
-    root.at('fLong).long.getOption(testValue) shouldBe Some(100L)
-    root.at('fDouble).double.getOption(testValue) shouldBe Some(12.3)
-    root.at('fString).string.getOption(testValue) shouldBe Some("hello")
-    root.at('fArray).arr.getOption(testValue) shouldBe Some(Vector(PValue(1), PValue(2), PValue(3)))
+    root.at('fBool).to[Boolean](testValue) shouldBe true
+    root.at('fBool).to[Option[Boolean]](testValue) shouldBe Some(true)
+    root.at('fInt).to[Int](testValue) shouldBe 10
+    root.at('fLong).to[Long](testValue) shouldBe 100L
+    root.at('fDouble).to[Double](testValue) shouldBe 12.3
+    root.at('fString).to[String](testValue) shouldBe "hello"
+    root.at('fArray).to[List[PValue]](testValue) shouldBe List(PValue(1), PValue(2), PValue(3))
+    root.at('fArray).to[List[Int]](testValue) shouldBe List(1, 2, 3)
   }
 
   it should "focus with dynamics" in {
-    root.fBool.boolean.getOption(testValue) shouldBe Some(true)
-    root.fInt.int.getOption(testValue) shouldBe Some(10)
-    root.fLong.long.getOption(testValue) shouldBe Some(100L)
-    root.fDouble.double.getOption(testValue) shouldBe Some(12.3)
-    root.fString.string.getOption(testValue) shouldBe Some("hello")
-    root.fArray.arr.getOption(testValue) shouldBe Some(Vector(PValue(1), PValue(2), PValue(3)))
+    root.fBool.to[Boolean](testValue) shouldBe true
+    root.fInt.to[Int](testValue) shouldBe 10
+    root.fLong.to[Long](testValue) shouldBe 100L
+    root.fDouble.to[Double](testValue) shouldBe 12.3
+    root.fString.to[String](testValue) shouldBe "hello"
+    root.fArray.to[List[Int]](testValue) shouldBe List(1, 2, 3)
   }
 
   it should "allow map and modify values in" in {
-    val expected = testValue.copy(testValue.value + ('fInt -> PValue(root.fInt.int.getOption(testValue).getOrElse(0) * 100)))
+    val expected = testValue.copy(testValue.value + ('fInt -> PValue(root.fInt.to[Int](testValue) * 100)))
 
-    root.fInt.int.modify(_ * 100)(testValue) shouldBe expected
-    root.fInt.map[Int, Int](_ * 10).int.modify(_ * 10)(testValue) shouldBe expected
+    root.fInt.as[Int].modify(_ * 100)(testValue) shouldBe PResult.valid(expected)
+    root.fInt.map[Int, Int](_ * 10).as[Int].modify(_ * 10)(testValue) shouldBe PResult.valid(expected)
 
-    val lengthLense = root.fString.map[String, Int](_.length).int
-    lengthLense.getOption(testValue) shouldBe Some(5)
+    val lengthLense = root.fString.map[String, Int](_.length).as[Int]
+    lengthLense.get(testValue) shouldBe PResult.valid(5)
 
-    root.fInt.validate[Int, Int](v => Right(v * 10)).int.modify(_ * 10)(testValue) shouldBe expected
-    root.fInt.validate[Int, Int](_ => Left(new RuntimeException)).int.modify(_ * 10)(testValue) shouldBe testValue
+    val error = new RuntimeException
+    root.fInt.transform((v: Int) => PResult.valid(v * 10)).as[Int].modify(_ * 10)(testValue) shouldBe PResult.valid(expected)
+    root.fInt.transform[Int, Int](_ => PResult.invalid(error)).as[Int].modify(_ * 10)(testValue) shouldBe PResult.invalid(error)
+    root.fInt.transform[Int, Int](_ => PResult.invalid(error)).asOpt[Int](testValue) shouldBe PResult.valid(None).withWarning(error)
   }
 
   it should "filter values" in {
-    root.fLong.filter[Long](_ > 10).int.getOption(testValue) shouldBe Some(100)
-    root.fLong.filter[Long](_ < 0).int.get(testValue) shouldBe Left(FilterFailure)
+    root.fLong.filter[Long](_ > 10).as[Int].get(testValue) shouldBe PResult.valid(100)
+    root.fLong.filter[Long](_ < 0).as[Int].get(testValue) shouldBe PResult.invalid(NullValue("Trying decode null value to type Int"))
+    root.fLong.filter[Long](_ < 0).asOpt[Int].get(testValue) shouldBe PResult.valid(None)
   }
 
   it should "direct return value" in {
-    root.fString.string(testValue) shouldBe "hello"
+    root.fString.as[String](testValue) shouldBe PResult.valid("hello")
   }
 
   "orElse" should "return value from fallback path on primary fail" in {
-    root.fStringWrong.string.get(testValue) shouldBe a [Left[_, _]]
-    root.fStringWrong.orElse(root.fString).string.getOption(testValue) shouldBe Some("hello")
-  }
-
-  "memoize" should "cache result for the source value" in {
-    val lens = root.fArray.map[Vector[PValue], Vector[PValue]](arr => arr :+ PValue(4))
-    val curr = lens.memoize
-
-    val v0 = lens.arr.getOption(testValue).get
-    val v1 = curr.arr.getOption(testValue).get
-    val v2 = curr.arr.getOption(testValue).get
-    val v3 = curr.arr.getOption(PValue(testValue.value + ('fBool -> PValue(false)))).get
-
-    v0 shouldNot be theSameInstanceAs v1
-    v1 should be theSameInstanceAs v2
-    v2 shouldNot be theSameInstanceAs v3
+    root.fStringWrong.as[String].get(testValue) shouldBe a [PError]
+    root.fStringWrong.orElse(root.fString).as[String].get(testValue) shouldBe PResult.valid("hello")
   }
 }

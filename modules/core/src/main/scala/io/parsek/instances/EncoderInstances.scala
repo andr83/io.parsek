@@ -9,7 +9,7 @@ import scala.language.higherKinds
 /**
   * @author Andrei Tupitcyn
   */
-trait encoders {
+trait EncoderInstances {
   implicit val idEncoder: Encoder[PValue] = Encoder.pure[PValue](identity)
   implicit val booleanEncoder: Encoder[Boolean] = Encoder.pure[Boolean](PValue.fromBoolean)
   implicit val intEncoder: Encoder[Int] = Encoder.pure[Int](PValue.fromInt)
@@ -21,9 +21,15 @@ trait encoders {
   implicit def traversableEncoder[A, C[A] <: Iterable[A]](implicit e: Encoder[A]): Encoder[C[A]] = Encoder.pure[C[A]](it => {
     PValue.fromValues(it.map(e.apply))
   })
+  implicit def optionEncoder[T](implicit enc: Encoder[T]): Encoder[Option[T]] = new Encoder[Option[T]] {
+    override def apply(a: Option[T]): PValue = a match {
+      case Some(x) => enc(x)
+      case None => PValue.PNull
+    }
+  }
   implicit def mapEncoder[A](implicit e: Encoder[A]): Encoder[Map[Symbol, A]] = Encoder.pure[Map[Symbol, A]](m=> {
     PValue.fromMap(m.mapValues(e.apply))
   })
 }
 
-object encoders extends encoders
+object EncoderInstances extends EncoderInstances
