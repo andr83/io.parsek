@@ -22,10 +22,10 @@ object Library {
     "com.fasterxml.jackson.core" % "jackson-core" % Version.jackson,
     "com.fasterxml.jackson.module" %% "jackson-module-scala" % Version.jackson
   )
-  val scalaArm = "com.jsuereth" % "scala-arm_2.11"% Version.scalaArm
+  val scalaArm = "com.jsuereth" %% "scala-arm" % Version.scalaArm
 
   val h2 =  "com.h2database" % "h2" % Version.h2
-  val scalaMeter = "com.storm-enroute" % "scalameter_2.11" % Version.scalaMeter % "test"
+  val scalaMeter = "com.storm-enroute" %% "scalameter" % Version.scalaMeter % "test"
   val scalaTest = "org.scalatest" %% "scalatest" % Version.scalaTest % "test"
   val shapeless = "com.chuusai" %% "shapeless" % "2.3.2"
 }
