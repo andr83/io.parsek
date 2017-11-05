@@ -22,14 +22,17 @@ package object parsek {
 
   def validate(root: PMap, schema: PStructType): PResult[PValue] = {
     val m = root.value
-    schema.fields.map { case PStructField(name, dataType, nullable) =>
+    schema.fields.map { case PStructField(name, dataType, nullable, required) =>
       m.get(name) match {
         case None | Some(PNull) =>
           if (nullable) {
             PResult.valid(Map(name -> PNull)).withWarning(NullField(name, s"Field ${name.name} is empty"))
           } else PResult.invalid(NullField(name, s"Field ${name.name} is empty in $m"))
         case Some(v) =>
-          validateType(v, dataType).map(vv => Map(name -> vv))
+          val validateResult = if (!required && nullable) {
+            validateType(v, dataType).fold(nel => PResult.valid(PValue.Null).withWarnings(nel.toList), PResult.valid)
+          } else validateType(v, dataType)
+          validateResult.map(vv => Map(name -> vv))
       }
     }.reduce(_.combine(_)).map(PValue.fromMap)
   }

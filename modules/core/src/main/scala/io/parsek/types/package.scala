@@ -7,7 +7,32 @@ import io.parsek.PValue._
   */
 package object types {
 
+  trait PValueTyped {
+    val valueType: PType
+    val value: PValue
+  }
+
   abstract sealed class PType
+
+  case class PArrayType(
+    dataType: Option[PType] = None
+  ) extends PType
+
+  case class PStructField(
+    name: Symbol,
+    dataType: PType,
+    // Allow accept Null values, e.g. key doesn't exist in source map
+    nullable: Boolean = true,
+    // If false and nullable true will return Null on cast errors
+    required: Boolean = false
+  )
+
+  case class PStructType(fields: Array[PStructField]) extends PType {
+    def add(name: Symbol, dataType: PType, nullable: Boolean = true, required: Boolean = false): PStructType =
+      add(PStructField(name, dataType, nullable, required))
+
+    def add(field: PStructField): PStructType = PStructType(fields.filter(_.name != field.name) :+ field)
+  }
 
   case object PBooleanType extends PType
 
@@ -25,26 +50,11 @@ package object types {
 
   case object PBinaryType extends PType
 
-  case class PArrayType(
-    dataType: Option[PType] = None
-  ) extends PType
-
   object PArrayType {
     def apply(dataType: PType): PArrayType = PArrayType(Some(dataType))
   }
 
   case object PMapType extends PType
-
-  case class PStructField(
-    name: Symbol,
-    dataType: PType,
-    nullable: Boolean = true
-  )
-
-  case class PStructType(fields: Array[PStructField]) extends PType {
-    def add(field: PStructField): PStructType = PStructType(fields.filter(_.name != field.name) :+ field)
-    def add(name: Symbol, dataType: PType, nullable: Boolean = true): PStructType = add(PStructField(name, dataType, nullable))
-  }
 
   object PStructType {
     def apply(fields: Seq[PStructField]): PStructType = PStructType(fields.toArray)
@@ -70,11 +80,6 @@ package object types {
       } toSeq)
       case PNull => throw new IllegalStateException(s"Can not detect type for Null value")
     }
-  }
-
-  trait PValueTyped {
-    val valueType: PType
-    val value: PValue
   }
 
   object PValueTyped {

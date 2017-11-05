@@ -116,12 +116,12 @@ object PPath {
 
   def doubleLens: Lens[PValue, Double] = lens[Double](PDouble)
 
-  def lens[A: Decoder](get: A => PValue): Lens[PValue, A] =
-    Lens(implicitly[Decoder[A]].apply)(a => _ => PResult.catchNonFatal(get(a)))
-
   def stringLens: Lens[PValue, String] = lens[String](PString)
 
   def instantLens: Lens[PValue, Instant] = lens[Instant](PInstant)
+
+  def lens[A: Decoder](get: A => PValue): Lens[PValue, A] =
+    Lens(implicitly[Decoder[A]].apply)(a => _ => PResult.catchNonFatal(get(a)))
 
   def vectorLens: Lens[PValue, Vector[PValue]] = lens[Vector[PValue]](PArray)
 

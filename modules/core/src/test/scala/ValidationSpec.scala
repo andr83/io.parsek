@@ -36,9 +36,17 @@ class ValidationSpec extends FlatSpec with Matchers {
 
   it should "pass with warnings" in {
     val res = validate(testValue, scheme.add('fInt, PBooleanType))
-    res shouldBe PResult.valid(testValue.update('fInt, PValue.Null))
+    res shouldBe PResult.valid(testValue.update('fInt, PValue.Null)).withWarning(TypeCastFailure("Can not cast value PInt(10) to Boolean"))
 
     val res2 = validate(testValue, scheme.add('fOpt, PStringType))
-    res2 shouldBe PResult.valid(testValue.update('fOpt, PValue.Null))
+    res2 shouldBe PResult.valid(testValue.update('fOpt, PValue.Null)).withWarning(NullField('fOpt, "Field fOpt is empty"))
+  }
+
+  it should "fail" in {
+    val res = validate(testValue, scheme.add('fInt, PBooleanType, required = true))
+    res shouldBe PResult.invalid(TypeCastFailure("Can not cast value PInt(10) to Boolean"))
+
+    val res2 = validate(testValue, scheme.add('fInt, PBooleanType, nullable = false))
+    res2 shouldBe PResult.invalid(TypeCastFailure("Can not cast value PInt(10) to Boolean"))
   }
 }

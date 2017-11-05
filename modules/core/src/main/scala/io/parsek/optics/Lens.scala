@@ -28,7 +28,7 @@ import io.parsek.PResult
   * @tparam A The target type
   * @tparam B The modified target type
   */
-abstract class PLens[S, T, A, B] {
+abstract class PLens[S, T, A, B] extends Getter[S, A] {
   self =>
   def get(s: S): PResult[A]
 
