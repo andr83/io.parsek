@@ -46,4 +46,25 @@ class ProjectionSpec extends FlatSpec with Matchers {
       'field1 -> PValue("hello")
     ))
   }
+
+  it should "find and map values in" in {
+    val p = Projection(
+      'field1 -> root.field1
+        .find[Int] { case (k, _) => k == 'f1 }
+        .map { case (k, v) => k -> (v * 100) }
+        .as[PValue],
+      'field2 -> root.field2
+        .filter((v: Boolean) => v)
+        .asOpt[Boolean]
+    )
+
+    val res = p.get(pmap(
+      'field1 -> PValue.pmap('f1 -> PValue(1), 'f2 -> PValue(2), 'f3 -> PValue.pmap('f1 -> PValue(3)), 'f4 -> PValue.pmap('f1 -> PValue(0))),
+      'field2 -> PValue("hello")
+    ))
+
+    res shouldBe PResult.valid(pmap(
+      'field1 -> PValue.pmap('f1 -> PValue(100), 'f2 -> PValue(2), 'f3 -> PValue.pmap('f1 -> PValue(300)), 'f4 -> PValue.pmap('f1 -> PValue(0)))
+    ))
+  }
 }

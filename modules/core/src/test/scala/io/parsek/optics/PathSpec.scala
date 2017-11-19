@@ -7,14 +7,15 @@ import org.scalatest.{FlatSpec, Matchers}
 /**
   * @author andr83
   */
-class PPathSpec extends FlatSpec with Matchers {
+class PathSpec extends FlatSpec with Matchers {
   val testValue = pmap(
     'fBool -> PValue(true),
     'fInt -> PValue(10),
     'fLong -> PValue(100L),
     'fDouble -> PValue(12.3),
     'fString -> PValue("hello"),
-    'fArray -> PValue(List(1, 2, 3))
+    'fArray -> PValue(List(1, 2, 3)),
+    'fMap -> PValue.pmap('f1 -> PValue(1), 'f2 -> PValue(2), 'f3 -> PValue.pmap('f1 -> PValue(3)), 'f4 -> PValue.pmap('f1 -> PValue(0)))
   )
 
   "PPath" should "focus" in {
@@ -41,14 +42,15 @@ class PPathSpec extends FlatSpec with Matchers {
     val expected = testValue.copy(testValue.value + ('fInt -> PValue(root.fInt.to[Int](testValue) * 100)))
 
     root.fInt.as[Int].modify(_ * 100)(testValue) shouldBe PResult.valid(expected)
-    root.fInt.map[Int, Int](_ * 10).as[Int].modify(_ * 10)(testValue) shouldBe PResult.valid(expected)
+
+    val expected2 = testValue.copy(testValue.value + ('fInt -> PValue(11)))
+    root.fInt.set(11).apply(testValue) shouldBe PResult.valid(expected2)
 
     val lengthLense = root.fString.map[String, Int](_.length).as[Int]
     lengthLense.get(testValue) shouldBe PResult.valid(5)
 
     val error = new RuntimeException
-    root.fInt.transform((v: Int) => PResult.valid(v * 10)).as[Int].modify(_ * 10)(testValue) shouldBe PResult.valid(expected)
-    root.fInt.transform[Int, Int](_ => PResult.invalid(error)).as[Int].modify(_ * 10)(testValue) shouldBe PResult.invalid(error)
+    root.fInt.transform[Int, Int](_ => PResult.invalid(error)).as[Int](testValue) shouldBe PResult.invalid(error)
     root.fInt.transform[Int, Int](_ => PResult.invalid(error)).asOpt[Int](testValue) shouldBe PResult.valid(None).withWarning(error)
   }
 
@@ -56,14 +58,30 @@ class PPathSpec extends FlatSpec with Matchers {
     root.fLong.filter[Long](_ > 10).as[Int].get(testValue) shouldBe PResult.valid(100)
     root.fLong.filter[Long](_ < 0).as[Int].get(testValue) shouldBe PResult.invalid(NullValue("Trying decode null value to type Int"))
     root.fLong.filter[Long](_ < 0).asOpt[Int].get(testValue) shouldBe PResult.valid(None)
+    root.fLong.filter[Boolean](identity).asOpt[Boolean].get(testValue) shouldBe PResult.valid(None)
   }
 
   it should "direct return value" in {
     root.fString.as[String](testValue) shouldBe PResult.valid("hello")
   }
 
+  it should "zoom in multiple values" in {
+    root.find[Int] { case (k, v) => k == 'f1 && v > 0 }.getAll(testValue) shouldBe Seq('f1 -> 1, 'f1 -> 3)
+
+    val res = root.find[Int] { case (k, v) => k == 'f1 && v > 0 }.modify { case (k, v) => 'f100 -> v * 100 }(testValue)
+    val expected = testValue.copy(testValue.value + ('fMap -> PValue.pmap('f100 -> PValue(100), 'f2 -> PValue(2), 'f3 -> PValue.pmap('f100 -> PValue(300)), 'f4 -> PValue.pmap('f1 -> PValue(0)))))
+    res shouldBe PResult.valid(expected)
+  }
+
+  it should "set multiple values" in {
+    val expected = testValue.copy(testValue.value + ('fMap -> PValue.pmap('f100 -> PValue(100), 'f2 -> PValue(2), 'f3 -> PValue.pmap('f100 -> PValue(100)), 'f4 -> PValue.pmap('f1 -> PValue(0)))))
+    root
+      .find[Int] { case (k, v) => k == 'f1 && v > 0 }
+      .set('f100 -> 100)(testValue) shouldBe PResult.valid(expected)
+  }
+
   "orElse" should "return value from fallback path on primary fail" in {
-    root.fStringWrong.as[String].get(testValue) shouldBe a [PError]
+    root.fStringWrong.as[String].get(testValue) shouldBe a[PError]
     root.fStringWrong.orElse(root.fString).as[String].get(testValue) shouldBe PResult.valid("hello")
   }
 }

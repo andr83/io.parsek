@@ -5,7 +5,7 @@ import java.time.Instant
 import cats.data.NonEmptyList
 import io.parsek.PValue._
 import io.parsek.implicits._
-import io.parsek.optics.PPath
+import io.parsek.optics.LensPath
 import io.parsek.types._
 
 /**
@@ -14,7 +14,7 @@ import io.parsek.types._
 package object parsek {
   type ThrowableNel = NonEmptyList[Throwable]
 
-  @inline val root: PPath = PPath.root
+  @inline val root: LensPath = LensPath.root
 
   @inline def arr(values: PValue*): PValue = PValue.arr(values: _*)
 
