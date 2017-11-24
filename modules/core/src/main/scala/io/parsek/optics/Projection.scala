@@ -3,6 +3,7 @@ package io.parsek.optics
 import cats.data.NonEmptyList
 import cats.implicits._
 import io.parsek.PValue
+import io.parsek.PValue.PMap
 
 import scala.collection.mutable
 import scala.language.implicitConversions
@@ -21,8 +22,11 @@ case class Projection(validators: Iterable[(Symbol, PValidationNel)]) {
         val (toKey, validator) = it.next()
         validator.get(rec) match {
           case Right(v) =>
-            if (v != PValue.Null) {
-              resSuccess += toKey -> v
+            v match {
+              case PValue.Null =>
+              case PValue.PMap(m) if m == Map.empty[Symbol, PValue] =>
+              case PValue.PArray(a) if a == Vector.empty[PValue] =>
+              case _ => resSuccess += toKey -> v
             }
           case Left(errList) =>
             failures += errList
