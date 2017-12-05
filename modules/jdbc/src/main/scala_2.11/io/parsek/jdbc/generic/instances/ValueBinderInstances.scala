@@ -4,11 +4,11 @@ import java.sql
 import java.sql.{PreparedStatement, Types}
 import java.time.{Instant, LocalDate, LocalDateTime}
 
+import io.parsek.PValue
 import io.parsek.PValue._
 import io.parsek.implicits._
-import io.parsek.jdbc.{ParameterBinder, ParameterTypeMeta, ValueBinder, _}
-import ValueBinder.{nullParameterBinder, pure}
-import io.parsek.PValue
+import io.parsek.jdbc.ValueBinder.{nullParameterBinder, pure}
+import io.parsek.jdbc.{ParameterBinder, ParameterTypeMeta, ValueBinder}
 import io.parsek.types._
 
 /**
@@ -98,7 +98,7 @@ trait ValueBinderInstances extends ParameterTypeMetaInstances {
   }
 
   implicit val pvalueTypedBinder: ValueBinder[PValueTyped] = new ValueBinder[PValueTyped] {
-    override def apply(x: PValueTyped): ParameterBinder = valueBinder(x.valueType)(x.value)
+    override def apply(x: PValueTyped): ParameterBinder = valueBinder(x.valueType).apply(x.value)
   }
 
   def valueBinder(valueType: PType): ValueBinder[PValue] = valueType match {

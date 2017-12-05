@@ -4,7 +4,7 @@ organization in ThisBuild := "io.parsek"
 
 scalaVersion in ThisBuild := "2.11.11"
 
-crossScalaVersions := Seq("2.11.11", "2.12.4")
+crossScalaVersions := Seq("2.10.6","2.11.11", "2.12.4")
 
 lazy val core = parsekModule("core")
   .settings(
@@ -55,6 +55,11 @@ def parsekModule(path: String): Project = {
   Project(id, file(s"modules/$path"))
     .settings(
       moduleName := s"parsek-$path",
-      name := s"Parsek $id"
+      name := s"Parsek $id",
+      unmanagedSourceDirectories in Compile += {
+        val s = (sourceDirectory in Compile).value
+        val v = scalaBinaryVersion.value
+        s / ("scala_"+ (if (v == "2.10") v else "2.11") )
+      }
     )
 }

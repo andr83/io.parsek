@@ -20,8 +20,8 @@ package object jdbc {
   type PValueBinder = ValueBinder[PValue]
 
   object ValueBinder {
-    @inline def nullParameterBinder[A : ParameterTypeMeta]: ParameterBinder = {
-      val sqlType = implicitly[ParameterTypeMeta[A]].jdbcType
+    @inline def nullParameterBinder[A](implicit meta: ParameterTypeMeta[A]): ParameterBinder = {
+      val sqlType = meta.jdbcType
       new ParameterBinder {
         def bind(stmt: PreparedStatement, index: Int): Int = {
           stmt.setNull(index, sqlType)
