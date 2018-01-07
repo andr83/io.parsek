@@ -4,7 +4,7 @@ import cats.kernel.Monoid
 import io.parsek.PValue
 
 /**
-  * @author andr83 
+  * @author Andrei Tupitcyn
   *         created on 20.06.17
   */
 trait PMapInstances {

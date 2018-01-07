@@ -9,9 +9,8 @@ import io.parsek.PValue.PMap
 import io.parsek._
 import io.parsek.calcite.adapter.ParsekTable
 import io.parsek.implicits._
-import io.parsek.jdbc._
-import io.parsek.jdbc.generic.JdbcQueryExecutor
-import io.parsek.jdbc.generic.implicits._
+import io.parsek.jdbc.{JdbcQueryExecutor, _}
+import io.parsek.jdbc.implicits._
 import io.parsek.types._
 import org.apache.calcite.jdbc.CalciteConnection
 import org.scalatest.{FlatSpec, Matchers}
@@ -77,26 +76,26 @@ class CalciteSpec extends FlatSpec with Matchers {
     withQueryExecutor { table => implicit qe =>
       table.add(r1)
 
-      val res = sql"select * from test".row
+      val res = sql"select * from test".as[PValue].unsafeRun
       res shouldBe r1
 
       table.add(r2)
-      val res2 = sql"select * from test where int_field = 11".row
+      val res2 = sql"select * from test where int_field = 11".as[PValue].unsafeRun
       res2 shouldBe r2
 
-      val res3 = sql"select count(1) from test".as[Int](1)
+      val res3 = sql"select count(1) from test".as[Int](1).unsafeRun
       res3 shouldBe 2
 
       (1 to 100000) foreach (i => {
         table.add(r1.update('int_field, PValue.fromInt(i)))
       })
 
-      val res4 = sql"select count(1) from test".as[Int](1)
+      val res4 = sql"select count(1) from test".as[Int](1).unsafeRun
       res4 shouldBe 100000
 
-      val strVal = r1.value.get('string_field).get.as[String].right.get
+      val strVal = r1.value('string_field).as[String].unsafe
       val start = System.nanoTime()
-      val res5 = sql"select * from test where int_field > 90000 and int_field < 90150 and string_field = $strVal".list
+      val res5 = sql"select * from test where int_field > 90000 and int_field < 90150 and string_field = $strVal".as[List[PValue]].unsafeRun
       println(s"Time: ${(System.nanoTime() - start) / 1000000000.0}")
       res5 should have size 149
     }
@@ -106,19 +105,19 @@ class CalciteSpec extends FlatSpec with Matchers {
     withQueryExecutor { table => implicit qe =>
       table.add(r1)
 
-      val res = sql"select count(1) from test".as[Int](1)
+      val res = sql"select count(1) from test".as[Int](1).unsafeRun
       res shouldBe 1
 
       val r3 = r1.update('long_field, PValue.fromLong(123L))
       table.add(r3)
-      val res2 = sql"select count(1) from test".as[Int](1)
+      val res2 = sql"select count(1) from test".as[Int](1).unsafeRun
       res2 shouldBe 1
 
-      val res3 = sql"select * from test where int_field=10".row
+      val res3 = sql"select * from test where int_field=10".as[PValue].unsafeRun
       res3 shouldBe r3
 
       table.remove(r1)
-      val res4 = sql"select count(1) from test".as[Int](1)
+      val res4 = sql"select count(1) from test".as[Int](1).unsafeRun
       res4 shouldBe 0
     }
   }

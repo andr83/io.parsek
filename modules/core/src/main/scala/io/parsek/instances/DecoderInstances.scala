@@ -6,7 +6,9 @@ import java.time.format.DateTimeFormatter
 import io.parsek.PResult._
 import io.parsek.PValue._
 import io.parsek.{Decoder, PResult, PValue}
+import io.parsek.syntax.traversable._
 
+import scala.reflect.runtime.universe.TypeTag
 import scala.collection.generic.CanBuildFrom
 
 /**
@@ -89,6 +91,7 @@ trait DecoderInstances {
   }
 
   private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-mm-dd")
+
   implicit val sqlDateDecoder: Decoder[java.sql.Date] = Decoder.partial[java.sql.Date] {
     case PDate(v) => valid(java.sql.Date.valueOf(v))
     case PInstant(v) => valid(new java.sql.Date(v.toEpochMilli))
@@ -100,8 +103,22 @@ trait DecoderInstances {
     case PArray(v) => valid(v)
   }
 
-  implicit val mapDecoder: Decoder[Map[Symbol, PValue]] = Decoder.partial[Map[Symbol, PValue]] {
+  implicit val mapKeySymbolPValueDecoder: Decoder[Map[Symbol, PValue]] = Decoder.partial[Map[Symbol, PValue]] {
     case PMap(v) => valid(v)
+  }
+
+  implicit def mapKeySymbolDecoder[A: TypeTag](implicit decoderA: Decoder[A]): Decoder[Map[Symbol, A]] = Decoder.partial[Map[Symbol, A]] {
+    case PMap(m) => m
+      .map { case (k, v) => decoderA(v).map(vv => k -> vv) }
+      .toPResult
+      .map(_.toMap)
+  }
+
+  implicit def mapKeyStringDecoder[A: TypeTag](implicit decoderA: Decoder[A]): Decoder[Map[String, A]] = Decoder.partial[Map[String, A]] {
+    case PMap(m) => m
+      .map { case (k, v) => decoderA(v).map(vv => k.name -> vv) }
+      .toPResult
+      .map(_.toMap)
   }
 
   implicit val bytesDecoder: Decoder[Array[Byte]] = Decoder.partial[Array[Byte]] {

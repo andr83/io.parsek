@@ -1,4 +1,4 @@
-package io.parsek.jdbc.generic.instances
+package io.parsek.jdbc.instances
 
 import java.sql
 import java.sql.{PreparedStatement, Types}

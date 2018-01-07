@@ -33,7 +33,6 @@ class HListEncoderSpec extends WordSpec with Matchers {
 
 
     "properly work with Option" in {
-
       Some(2).toPValue shouldEqual PInt(2)
       Option(3).toPValue shouldEqual PInt(3)
       None.asInstanceOf[Option[Int]].toPValue shouldEqual PNull

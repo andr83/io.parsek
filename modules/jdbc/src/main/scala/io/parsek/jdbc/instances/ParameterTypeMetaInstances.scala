@@ -1,12 +1,13 @@
-package io.parsek.jdbc.generic.instances
+package io.parsek.jdbc.instances
 
 import java.sql.{Blob, Date, Timestamp, Types}
 import java.time.{Instant, LocalDate, LocalDateTime}
-import io.parsek.jdbc.ParameterTypeMeta
+
 import io.parsek.implicits._
+import io.parsek.jdbc.ParameterTypeMeta
 
 /**
-  * @author andr83
+  * @author Andrei Tupitcyn
   */
 trait ParameterTypeMetaInstances {
   implicit val booleanTypeMeta: ParameterTypeMeta[Boolean] = ParameterTypeMeta[Boolean](Types.BOOLEAN)

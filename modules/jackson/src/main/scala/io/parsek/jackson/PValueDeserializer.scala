@@ -2,11 +2,11 @@ package io.parsek.jackson
 
 import com.fasterxml.jackson.core.{JsonParser, TreeNode}
 import com.fasterxml.jackson.databind.node._
-import com.fasterxml.jackson.databind.{DeserializationContext, JsonDeserializer, JsonNode}
+import com.fasterxml.jackson.databind.{DeserializationContext, JsonDeserializer}
 import io.parsek.PValue
 
 /**
-  * @author andr83 
+  * @author Andrei Tupitcyn
   *         created on 15.05.17
   */
 class PValueDeserializer extends JsonDeserializer[PValue]{

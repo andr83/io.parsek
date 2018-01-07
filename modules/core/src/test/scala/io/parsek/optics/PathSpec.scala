@@ -5,7 +5,7 @@ import io.parsek.implicits._
 import org.scalatest.{FlatSpec, Matchers}
 
 /**
-  * @author andr83
+  * @author Andrei Tupitcyn
   */
 class PathSpec extends FlatSpec with Matchers {
   val testValue = pmap(
@@ -25,6 +25,8 @@ class PathSpec extends FlatSpec with Matchers {
     root.at('fLong).to[Long](testValue) shouldBe 100L
     root.at('fDouble).to[Double](testValue) shouldBe 12.3
     root.at('fString).to[String](testValue) shouldBe "hello"
+    root.at('fMap).at('f3).to[Map[String, Int]](testValue) shouldBe Map("f1" -> 3)
+    root.at('fMap).at('f4).to[Map[Symbol, Int]](testValue) shouldBe Map('f1 -> 0)
     root.at('fArray).to[List[PValue]](testValue) shouldBe List(PValue(1), PValue(2), PValue(3))
     root.at('fArray).to[List[Int]](testValue) shouldBe List(1, 2, 3)
   }

@@ -4,7 +4,7 @@ import io.parsek.types._
 import org.scalatest.{FlatSpec, Matchers}
 
 /**
-  * @author andr83
+  * @author Andrei Tupitcyn
   */
 class ValidationSpec extends FlatSpec with Matchers {
   val testValue = pmap(

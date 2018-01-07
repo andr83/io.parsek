@@ -7,25 +7,16 @@ import cats.kernel.Semigroup
 import scala.util.{Failure, Success, Try}
 
 /**
-  * @author andr83
+  *
+  * @author Andrei Tupitcyn
   */
 sealed abstract class PResult[+A] {
+  val isError: Boolean
+
   def withWarning(error: Throwable): PResult[A] =
     this match {
       case PSuccess(a, warnings) => PSuccess(a, warnings :+ error)
       case e: PError => e
-    }
-
-  def withWarnings(errors: Seq[Throwable]): PResult[A] =
-    this match {
-      case PSuccess(a, warnings) => PSuccess(a, warnings ++ errors)
-      case e: PError => e
-    }
-
-  @inline def fold[B](fe: ThrowableNel => B, fa: A => B): B =
-    this match {
-      case PSuccess(a, _) => fa(a)
-      case PError(errors) => fe(errors)
     }
 
   @inline def unsafe: A = fold(nel=> throw nel.head, identity)
@@ -42,6 +33,12 @@ sealed abstract class PResult[+A] {
       case e: PError => e
     }
 
+  @inline def errorMap(fe: ThrowableNel => ThrowableNel): PResult[A] =
+    this match {
+      case PError(errors) => PError(fe(errors))
+      case ok => ok
+    }
+
   @inline def foreach(f: A => Unit): Unit =
     this match {
       case PSuccess(a, _) => f(a)
@@ -55,6 +52,12 @@ sealed abstract class PResult[+A] {
       case e: PError => e
     }
 
+  def withWarnings(errors: Seq[Throwable]): PResult[A] =
+    this match {
+      case PSuccess(a, warnings) => PSuccess(a, warnings ++ errors)
+      case e: PError => e
+    }
+
   @inline def combine[AA >: A](that: PResult[AA])(implicit AA: Semigroup[AA]): PResult[AA] =
     (this, that) match {
       case (PSuccess(a, w1), PSuccess(b, w2)) => PSuccess(AA.combine(a, b), w1 ++ w2)
@@ -64,6 +67,12 @@ sealed abstract class PResult[+A] {
     }
 
   @inline def getOrElse[B >: A](default: => B): B = fold(_=> default, identity)
+
+  @inline def fold[B](fe: ThrowableNel => B, fa: A => B): B =
+    this match {
+      case PSuccess(a, _) => fa(a)
+      case PError(errors) => fe(errors)
+    }
 
   @inline def orElse[B >: A](alternative: => PResult[B]): PResult[B] =
     this match {
@@ -83,15 +92,18 @@ sealed abstract class PResult[+A] {
 }
 
 object PResult {
-  def valid[A](a: A): PResult[A] = PSuccess(a)
-  def invalid(head: Throwable, tail: Throwable*): PResult[Nothing] = PError(NonEmptyList.of(head, tail:_*))
   def invalid(errors: ThrowableNel): PResult[Nothing] = PError(errors)
+
   def catchNonFatal[A](f: => A): PResult[A] =
     try {
       valid(f)
     } catch {
       case scala.util.control.NonFatal(t) => invalid(t)
     }
+
+  def valid[A](a: A): PResult[A] = PSuccess(a)
+
+  def invalid(head: Throwable, tail: Throwable*): PResult[Nothing] = PError(NonEmptyList.of(head, tail: _*))
 
   def fromTry[A](t: Try[A]): PResult[A] =
     t match {
@@ -101,10 +113,12 @@ object PResult {
 }
 
 case class PSuccess[A](private val value: A, warnings: Seq[Throwable] = Seq.empty) extends PResult[A] {
+  val isError: Boolean = false
   def get: A = value
 }
 
 case class PError(errors: NonEmptyList[Throwable]) extends PResult[Nothing] {
+  val isError: Boolean = true
   def error: Throwable = errors.head
 }
 

@@ -2,11 +2,11 @@ package io.parsek.jackson
 
 import java.time.Instant
 
-import org.scalatest.{FlatSpec, Matchers}
 import io.parsek._
+import org.scalatest.{FlatSpec, Matchers}
 
 /**
-  * @author andr83
+  * @author Andrei Tupitcyn
   */
 class JsonSpec extends FlatSpec with Matchers {
   "Json SerDe" should "parse string to PValue and serialize back" in {
@@ -14,7 +14,7 @@ class JsonSpec extends FlatSpec with Matchers {
       """{"data":{"currency":"Kč"},"sessionId":"af652b63d57c6cb508fd9176ffkf65e48c78ef38","created":1467158651342}"""
 
     val serde = JsonSerDe()
-    val pv = serde.read(str)
+    val pv = serde.read(str).unsafe
     val json = serde.write(pv)
     assert(str == json)
   }

@@ -1,15 +1,14 @@
-package io.parsek.jdbc.generic.syntax
+package io.parsek.jdbc.syntax
 
-import resource._
 import javax.sql.DataSource
 
-import io.parsek.jdbc.{NameConverter, QueryExecutor}
-import io.parsek.jdbc.generic.JdbcQueryExecutor
+import io.parsek.jdbc.{JdbcQueryExecutor, NameConverter, QueryExecutor}
+import resource._
 
 import scala.language.implicitConversions
 
 /**
-  * @author andr83
+  * @author Andrei Tupitcyn
   */
 
 trait DataSourceSyntax {

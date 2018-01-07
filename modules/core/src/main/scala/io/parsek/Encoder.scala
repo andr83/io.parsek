@@ -1,6 +1,8 @@
 package io.parsek
 
 /**
+  * Convert `A` type to PValue.
+  *
   * @author Andrei Tupitcyn
   */
 trait Encoder[-A] extends Serializable {

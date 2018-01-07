@@ -2,11 +2,12 @@ package io.parsek
 
 import io.parsek.PValue._
 
+import scala.language.postfixOps
+
 /**
   * @author Andrei Tupitcyn
   */
 package object types {
-
   trait PValueTyped {
     val valueType: PType
     val value: PValue
@@ -84,8 +85,8 @@ package object types {
 
   object PValueTyped {
     def apply(v: PValue, vType: PType): PValueTyped = new PValueTyped {
-      override val valueType = vType
-      override val value = v
+      override val valueType: PType = vType
+      override val value: PValue = v
     }
   }
 }

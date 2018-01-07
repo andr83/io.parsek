@@ -1,8 +1,7 @@
 package io.parsek
 
 /**
-  * @author andr83 
-  *         created on 03.05.17
+  * @author Andrei Tupitcyn
   */
 package object optics {
   type Lens[S, A] = PLens[S, S, A, A]

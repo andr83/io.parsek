@@ -3,26 +3,26 @@ package io.parsek.optics
 import io.parsek.PResult
 
 /**
-  * @author andr83
+  * @author Andrei Tupitcyn
   *
-  * Lense is:
+  *         [[Lens]] is:
+  *         {{{
+  *          case class User(name: String, id: String)
   *
-  * case class User(name: String, id: String)
+  *          val nameLens = Lens[User, User, String, String](user=> PResult.valid(user.name), newName => user => user.name = newName)
   *
-  * val nameLens = Lens[User, User, String, String](user=> PResult.valid(user.name), newName => user => user.name = newName)
+  *          val idLens = Lens[User, User, String, Int](user=> PResult.valid(user.id), intId => user => user.id = id.toString)
   *
-  * val idLens = Lens[User, User, String, Int](user=> PResult.valid(user.id), intId => user => user.id = id.toString)
+  *          val userAndrei = User("Andrei", "10")
+  *          val nameResult: PResult[String] = nameLens.get(userAndrei)
+  *          // PSuccess("Andrei")
   *
-  * val userAndrei = User("Andrei", "10")
-  * val nameResult: PResult[String] = nameLens.get(userAndrei)
-  * // PSuccess("Andrei")
+  *          val userAndrei2 = idLens.set(2)(userAndrei)
+  *          // User("Andrei", "2")
   *
-  * val userAndrei2 = idLens.set(2)(userAndrei)
-  * // User("Andrei", "2")
-  *
-  * val userBulat = nameLens.set("Bulat")(userAndrei)
-  * // User("Bulat", "10")
-  *
+  *          val userBulat = nameLens.set("Bulat")(userAndrei)
+  *          // User("Bulat", "10")
+  *         }}}
   * @tparam S The source value type on which we apply lens
   * @tparam T The modified source type after applying lens
   * @tparam A The target type

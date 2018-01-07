@@ -8,7 +8,7 @@ import io.parsek.types.{PValueTyped, _}
 
 import scala.language.implicitConversions
 
-
+/** Extending PValue with additional ops */
 trait PValueSyntax {
   implicit final def pvalueSyntaxOps(v: PValue): PValueOps = new PValueOps(v)
 }
@@ -18,24 +18,32 @@ trait PValueSyntax {
   */
 final class PValueOps(val value: PValue) extends AnyVal {
   self =>
+
+  /** Get inner value by `key` and safe decode it to type `A` */
   def as[A: Decoder](key: Symbol): PResult[A] = value match {
     case PMap(map) => implicitly[Decoder[A]].apply(map.getOrElse(key, PValue.Null))
     case other => throw TraverseFailure(s"Can not traverse to field ${key.name} in $other")
   }
 
+  /** Get inner value by `key` and unsafe decode it to type `A` */
   def asUnsafe[A: Decoder](key: Symbol): A = implicitly[Decoder[A]].unsafe(value)
 
+  /** Convert `PValue` to `Option[PValue]`. `PValue.Null` will convert to `None` */
   def opt: Option[PValue] = value match {
     case PValue.Null => None
     case other => Some(other)
   }
 
+  /** Alias to `unsafe` method */
   def to[A: Decoder]: A = asUnsafe[A]
 
+  /** Unsafe convert value to type `A` */
   def asUnsafe[A: Decoder]: A = as[A].fold[A](nel => throw nel.head, identity)
 
+  /** Safe convert value to type `A` */
   def as[A: Decoder]: PResult[A] = implicitly[Decoder[A]].apply(value)
 
+  /** Map value with function `f` */
   def map[A: Decoder, B: Encoder](f: A => B): PResult[PValue] = {
     val d = implicitly[Decoder[A]]
     val e = implicitly[Encoder[B]]
@@ -46,6 +54,7 @@ final class PValueOps(val value: PValue) extends AnyVal {
     }
   }
 
+  /** Map value with function `f`. If underlying type is PArray or PStruct function `f` will call recursively. */
   def mapValues[A: Decoder, B: Encoder](f: A => B): PResult[PValue] = {
     val d = implicitly[Decoder[A]]
     val e = implicitly[Encoder[B]]
@@ -66,6 +75,7 @@ final class PValueOps(val value: PValue) extends AnyVal {
     }
   }
 
+  /** Map value with function `f` taken `(Symbol, A)` as arguments. Applying only to PMap values. */
   def mapWithKey[A: Decoder, B: Encoder](f: (Symbol, A) => (Symbol, B)): PResult[PValue] = {
     val d = implicitly[Decoder[A]]
     val e = implicitly[Encoder[B]]
@@ -84,6 +94,7 @@ final class PValueOps(val value: PValue) extends AnyVal {
     }
   }
 
+  /** Map value with possible failed result. */
   def transform[A: Decoder, B: Encoder](f: A => PResult[B]): PResult[PValue] = {
     val d = implicitly[Decoder[A]]
     val e = implicitly[Encoder[B]]
@@ -104,35 +115,7 @@ final class PValueOps(val value: PValue) extends AnyVal {
     }
   }
 
-  def findAndMap[A: Decoder, B: Encoder](p: (Symbol, PValue) => Boolean, f: (Symbol, A) => (Symbol, B)): PValue = value match {
-    case pm: PMap => PValueOps.traverseAndMap(p, f)(pm)
-    case other => other
-  }
-
   def typed: PValueTyped = PValueTyped(value, PType(value))
 
   def withType(t: PType): PValueTyped = PValueTyped(value, t)
-}
-
-object PValueOps {
-  private def traverseAndMap[A: Decoder, B: Encoder](p: (Symbol, PValue) => Boolean, f: (Symbol, A) => (Symbol, B))(pm: PMap): PMap = {
-    PMap(pm.value.map { case (k, v) =>
-      if (p(k, v)) {
-        val d = implicitly[Decoder[A]]
-        val e = implicitly[Encoder[B]]
-        d(v).fold(_ => k -> v, a => {
-          val (kb, vb) = f(k, a)
-          kb -> e(vb)
-        })
-      } else v match {
-        case m: PMap => k -> traverseAndMap[A, B](p, f)(m)
-        case PArray(arr) =>
-          k -> PArray(arr.map {
-            case m: PMap => traverseAndMap[A, B](p, f)(m)
-            case other => other
-          })
-        case other => k -> other
-      }
-    })
-  }
 }

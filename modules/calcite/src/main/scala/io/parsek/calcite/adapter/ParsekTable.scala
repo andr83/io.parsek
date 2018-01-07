@@ -11,8 +11,7 @@ import org.apache.calcite.rel.`type`.{RelDataType, RelDataTypeFactory}
 import org.apache.calcite.schema.ScannableTable
 import org.apache.calcite.schema.impl.AbstractTable
 
-import collection.JavaConverters._
-import collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 /**
   * @author Andrei Tupitcyn
@@ -37,9 +36,6 @@ case class ParsekTable(source: util.Map[Seq[String], Array[AnyRef]], schema: PSt
     b.build()
   }
 
-  def key(value: Array[AnyRef]): Seq[String] = keys.map(i=> value(i).toString)
-  def value(r: PMap): Array[AnyRef] = decoders.map(_.apply(r)).toArray
-
   def add(r: PMap): Unit = {
     val v = value(r)
     source.put(key(v), v)
@@ -48,6 +44,10 @@ case class ParsekTable(source: util.Map[Seq[String], Array[AnyRef]], schema: PSt
   def remove(r: PMap): Unit = {
     source.remove(key(value(r)))
   }
+
+  def key(value: Array[AnyRef]): Seq[String] = keys.map(i => value(i).toString)
+
+  def value(r: PMap): Array[AnyRef] = decoders.map(_.apply(r)).toArray
 }
 
 object ParsekTable {
@@ -87,15 +87,12 @@ object ParsekTable {
       case PDateType => sqlDateDecoder
       case PBinaryType => bytesDecoder
       case PArrayType(_) => vectorDecoder
-      case PMapType => mapDecoder
+      case PMapType => mapKeyStringDecoder[PValue]
       case _ => throw new IllegalArgumentException(s"Type $dataType doesn't support")
     }
     (pm: PMap) => pm.value.get(name).map {
       case PValue.PNull => null
-      case pv => decoder(pv) match {
-        case Right(v) => v.asInstanceOf[AnyRef]
-        case Left(err) => throw err
-      }
+      case pv => decoder(pv).unsafe.asInstanceOf[AnyRef]
     }.orNull
   }
 }

@@ -5,15 +5,15 @@ import io.parsek.{Encoder, PValue}
 import scala.language.implicitConversions
 
 /**
-  * @author andr83 
+  * @author Andrei Tupitcyn
   *         created on 06.10.17
   */
 trait EncoderSyntax {
-  implicit def encoderSyntaxOps[T : Encoder](t: T): EncoderOps[T] = new EncoderOps(t)
+  implicit def encoderSyntaxOps[A: Encoder](a: A): EncoderOps[A] = new EncoderOps(a)
 }
 
 object EncoderSyntax extends EncoderSyntax
 
-class EncoderOps[T](val obj: T) extends AnyVal {
-  def toPValue(implicit encoder: Encoder[T]): PValue = encoder(obj)
+class EncoderOps[A](val a: A) extends AnyVal {
+  def toPValue(implicit encoder: Encoder[A]): PValue = encoder(a)
 }

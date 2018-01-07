@@ -27,8 +27,13 @@ trait EncoderInstances {
       case None => PValue.PNull
     }
   }
-  implicit def mapEncoder[A](implicit e: Encoder[A]): Encoder[Map[Symbol, A]] = Encoder.pure[Map[Symbol, A]](m=> {
+
+  implicit def mapKeySymbolEncoder[A](implicit e: Encoder[A]): Encoder[Map[Symbol, A]] = Encoder.pure[Map[Symbol, A]](m => {
     PValue.fromMap(m.mapValues(e.apply))
+  })
+
+  implicit def mapKeyStringEncoder[A](implicit e: Encoder[A]): Encoder[Map[String, A]] = Encoder.pure[Map[String, A]](m => {
+    PValue.fromMap(m.map { case (k, v) => Symbol(k) -> e(v) })
   })
 }
 

@@ -1,9 +1,9 @@
-package io.parsek.jdbc.generic.instances
+package io.parsek.jdbc.instances
 
-import io.parsek.jdbc.{ParameterTypeMeta, ToSql, ValueBinder}
+import io.parsek.jdbc.ToSql
 
 /**
-  * @author andr83
+  * @author Andrei Tupitcyn
   */
 
 trait ToSqlInstances0 {

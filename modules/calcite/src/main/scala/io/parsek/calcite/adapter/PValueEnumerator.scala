@@ -1,6 +1,5 @@
 package io.parsek.calcite.adapter
 
-import java.lang.{Iterable => JIterable}
 import java.util
 
 import org.apache.calcite.linq4j.{Enumerator, Linq4j}

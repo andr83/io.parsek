@@ -7,7 +7,7 @@ import scala.collection.generic.CanBuildFrom
 import scala.language.higherKinds
 
 /**
-  * @author andr83 
+  * @author Andrei Tupitcyn
   *         created on 20.09.17
   */
 trait TraversableSyntax0 {
@@ -16,14 +16,6 @@ trait TraversableSyntax0 {
     implicit cbfL: CanBuildFrom[Nothing, L, C[L]],
     cbfR: CanBuildFrom[Nothing, R, C[R]]
   ) {
-    def separate: (C[L], C[R]) = {
-      val (lb, rb) = underlying.foldLeft((cbfL(), cbfR())) {
-        case ((lBuilder, rBuilder), Right(r: R@unchecked)) => (lBuilder, rBuilder += r)
-        case ((lBuilder, rBuilder), Left(l: L@unchecked)) => (lBuilder += l, rBuilder)
-      }
-      (lb.result(), rb.result())
-    }
-
     def toEither: Either[C[L], C[R]] = {
       val (l, r) = underlying.separate
       if (l.nonEmpty) {
@@ -31,6 +23,14 @@ trait TraversableSyntax0 {
       } else {
         Right[C[L], C[R]](r)
       }
+    }
+
+    def separate: (C[L], C[R]) = {
+      val (lb, rb) = underlying.foldLeft((cbfL(), cbfR())) {
+        case ((lBuilder, rBuilder), Right(r: R@unchecked)) => (lBuilder, rBuilder += r)
+        case ((lBuilder, rBuilder), Left(l: L@unchecked)) => (lBuilder += l, rBuilder)
+      }
+      (lb.result(), rb.result())
     }
 
     def toEitherNel: Either[NonEmptyList[L], C[R]] = {
@@ -52,6 +52,15 @@ trait TraversableSyntax extends TraversableSyntax0 {
       implicit cbfL: CanBuildFrom[Nothing, L, C[L]],
       cbfR: CanBuildFrom[Nothing, R, C[R]]
     ) {
+    def toEitherNel: Either[NonEmptyList[L], C[R]] = {
+      val (l, r) = underlying.separate
+      if (l.nonEmpty) {
+        Left(NonEmptyList.fromListUnsafe(l.toList.asInstanceOf[List[L]]))
+      } else {
+        Right[NonEmptyList[L], C[R]](r)
+      }
+    }
+
     def separate: (C[L], C[R]) = {
       val (lb, rb) = underlying.foldLeft((cbfL(), cbfR())) {
         case ((lBuilder, rBuilder), Right(r: R@unchecked)) => (lBuilder, rBuilder += r)
@@ -61,21 +70,21 @@ trait TraversableSyntax extends TraversableSyntax0 {
       }
       (lb.result(), rb.result())
     }
-
-    def toEitherNel: Either[NonEmptyList[L], C[R]] = {
-      val (l, r) = underlying.separate
-      if (l.nonEmpty) {
-        Left(NonEmptyList.fromListUnsafe(l.toList.asInstanceOf[List[L]]))
-      } else {
-        Right[NonEmptyList[L], C[R]](r)
-      }
-    }
   }
 
   implicit class TraversablePResultOps[R, C[_] <: Traversable[_]](underlying: C[PResult[R]])(
     implicit cbfR: CanBuildFrom[Nothing, R, C[R]],
     cbfE: CanBuildFrom[Nothing, Throwable, C[Throwable]]
   ) {
+    def toPResult: PResult[C[R]] = {
+      val (errors, values) = this.separate
+      if (errors.nonEmpty) {
+        PResult.invalid(NonEmptyList.fromListUnsafe(errors.toList.asInstanceOf[List[Throwable]]))
+      } else {
+        PResult.valid(values)
+      }
+    }
+
     def separate: (C[Throwable], C[R]) = {
       val (lb, rb) = underlying.foldLeft((cbfE(), cbfR())) {
         case ((lBuilder, rBuilder), PSuccess(r: R@unchecked, _)) => (lBuilder, rBuilder += r)
@@ -84,15 +93,6 @@ trait TraversableSyntax extends TraversableSyntax0 {
           (lBuilder, rBuilder)
       }
       (lb.result(), rb.result())
-    }
-
-    def toPResult: PResult[C[R]] = {
-      val (errors, values) = this.separate
-      if (errors.nonEmpty) {
-        PResult.invalid(NonEmptyList.fromListUnsafe(errors.toList.asInstanceOf[List[Throwable]]))
-      } else {
-        PResult.valid(values)
-      }
     }
   }
 

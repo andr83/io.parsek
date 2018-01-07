@@ -3,6 +3,8 @@ package io.parsek
 import scala.reflect.runtime.universe.{TypeTag, typeTag}
 
 /**
+  * Convert `PValue` to `A` type.
+  *
   * @author Andrei Tupitcyn
   */
 trait Decoder[A] extends Serializable {

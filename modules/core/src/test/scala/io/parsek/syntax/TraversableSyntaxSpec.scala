@@ -5,7 +5,7 @@ import io.parsek.syntax.TraversableSyntax._
 import org.scalatest.{FlatSpec, Matchers}
 
 /**
-  * @author andr83
+  * @author Andrei Tupitcyn
   */
 class TraversableSyntaxSpec extends FlatSpec with Matchers {
   "Traversable of either " must " separate on Left and Right parts" in {

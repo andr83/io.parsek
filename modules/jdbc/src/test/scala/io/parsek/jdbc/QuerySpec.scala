@@ -7,8 +7,7 @@ import java.time.{LocalDate, LocalDateTime, ZoneId}
 import io.parsek.PValue.PMap
 import io.parsek._
 import io.parsek.implicits._
-import io.parsek.jdbc.generic.JdbcQueryExecutor
-import io.parsek.jdbc.generic.implicits._
+import io.parsek.jdbc.implicits._
 import org.scalatest.{FlatSpec, Matchers}
 
 /**
@@ -52,29 +51,31 @@ class QuerySpec extends FlatSpec with Matchers {
     )
   )
 
-  def withQueryExecutor(test: QueryExecutor => Unit): Unit = {
+  def fromIO[A](test: => JdbcIO[A]): Unit = {
     Class.forName("org.h2.Driver")
     val conn = DriverManager.getConnection("jdbc:h2:mem:test")
     val qe = JdbcQueryExecutor(conn, LowerCaseConverter)
     try {
       val stmt = conn.createStatement()
-      stmt.executeUpdate("""
-                           |CREATE TABLE test (
-                           | int_field INTEGER NOT NULL,
-                           | long_field BIGINT,
-                           | bool_field BOOLEAN,
-                           | time_field TIMESTAMP,
-                           | date_field DATE,
-                           | string_field VARCHAR(250),
-                           | array_field ARRAY
-                           |)
+      stmt.executeUpdate(
+        """
+          |CREATE TABLE test (
+          | int_field INTEGER NOT NULL,
+          | long_field BIGINT,
+          | bool_field BOOLEAN,
+          | time_field TIMESTAMP,
+          | date_field DATE,
+          | string_field VARCHAR(250),
+          | array_field ARRAY
+          |)
         """.stripMargin)
       stmt.close()
 
-      qe.insert("TEST", r1)
-      qe.insert("TEST", r2)
-
-      test(qe)
+      (for {
+        _ <- JdbcIO.insert("TEST", r1)
+        _ <- JdbcIO.insert("TEST", r2)
+        res <- test
+      } yield res).unsafeRun(qe)
     } finally {
       conn.close()
     }
@@ -87,60 +88,53 @@ class QuerySpec extends FlatSpec with Matchers {
     q.params.size shouldBe 1
   }
 
-  it should "execute with QueryExecutor" in {
-    withQueryExecutor {implicit qe =>
-      val res = sql"select * from test where int_field = 10".as[Int](1)
-      res shouldBe 10
-
-      val res2 = sql"select * from test where int_field in (?)".bind(Seq(10, 11)).list
+  it should "be able run queries in monadic flow" in fromIO {
+    for {
+      res1 <- sql"select * from test where int_field = 10".as[Int]
+      res2 <- sql"select * from test where int_field in (?)".bind(Seq(10, 11)).as[List[PValue]]
+      res3 <- sql"select * from test where int_field in (${Seq(10, 11)})".as[List[PValue]]
+      res4 <- sql"select * from test".as[List[PValue]]
+      res5 <- sql"select * from test where int_field = ?".bindOpt(Some(10), None).as[PValue]
+    } yield {
+      res1 shouldBe 10
       res2 shouldBe r1 :: r2 :: Nil
-
-      val res3 = sql"select * from test where int_field in (${Seq(10, 11)})".list
       res3 shouldBe r1 :: r2 :: Nil
-
-      val res4 = sql"select * from test".list
       res4 shouldBe r1 :: r2 :: Nil
-
-      val res5 = sql"select * from test where int_field = ?".bindOpt(Some(10), None).row
       res5 shouldBe r1
     }
   }
 
-  "QueryExecutor" should "insert PValue to table" in {
-    withQueryExecutor { implicit qe =>
-      val res1 = sql"delete from test".update
+  "QueryExecutor" should "insert PValue to table" in fromIO {
+    for {
+      res1 <- sql"delete from test".update
+      res2 <- sql"select count(*) from test".as[Int](1)
+      _ <- JdbcIO.insert("TEST", r1)
+      res3 <- sql"select count(*) from test".as[Int](1)
+      _ <- JdbcIO.insert("TEST", r2)
+      res4 <- sql"select * from test".as[List[PValue]]
+      _ <- sql"insert into test(int_field, array_field) values (${r1.int_field}, ${r1.array_field})".update
+      res5 <- sql"select count(1) from test".as[Int](1)
+    } yield {
       res1 shouldBe 2
-
-      val res2 = sql"select count(*) from test".as[Int](1)
       res2 shouldBe 0
-
-      qe.insert("TEST", r1)
-      val res3 = sql"select count(*) from test".as[Int](1)
       res3 shouldBe 1
-
-      qe.insert("TEST", r2)
-      val res4 = sql"select * from test".list
       res4 shouldBe r1 :: r2 :: Nil
-
-      sql"insert into test(int_field, array_field) values (${r1.int_field}, ${r1.array_field})".execute
-      val res5 = sql"select count(1) from test".as[Int](1)
       res5 shouldBe 3
     }
   }
 
-  it should "insert values in batch mode" in {
-    withQueryExecutor{implicit qe=>
-      val res1 = sql"delete from test".update
+  it should "insert values in batch mode" in fromIO {
+    for {
+      res1 <- sql"delete from test".update
+      _ <- JdbcIO.batchInsert("TEST", Seq(r1, r2))
+      res2 <- sql"select * from test".as[List[PValue]]
+    } yield {
       res1 shouldBe 2
-
-      qe.batchInsert("TEST", Seq(r1, r2))
-
-      val res2 = sql"select * from test".list
       res2 shouldBe r1 :: r2 :: Nil
     }
   }
 
-  it should "work proper" in {
+  it should "work proper with quotes" in {
     val q = Query(
       "select * from test where id = ? and test = \"dsf?dfs\"")
       .bind(1, 2)

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import io.parsek.{PValue, PValueFormatter}
 
 /**
-  * @author andr83
+  * @author Andrei Tupitcyn
   */
 @SerialVersionUID(1L)
 class ParsekModule(formatter: PValueFormatter) extends SimpleModule {

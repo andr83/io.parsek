@@ -11,12 +11,14 @@ lazy val core = parsekModule("core")
       Library.scalaTest
     )
   )
+
 lazy val jackson = parsekModule("jackson")
   .settings(
     libraryDependencies ++= Library.jackson,
     libraryDependencies += Library.scalaTest
   )
   .dependsOn(core)
+
 lazy val jdbc = parsekModule("jdbc")
   .settings(
     libraryDependencies ++= Seq(
@@ -37,7 +39,6 @@ lazy val calcite = parsekModule("calcite")
     )
   )
   .dependsOn(core, jdbc)
-
 
 lazy val shapeless = parsekModule("shapeless")
   .settings(

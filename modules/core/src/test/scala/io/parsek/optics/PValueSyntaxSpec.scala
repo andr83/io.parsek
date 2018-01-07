@@ -54,4 +54,8 @@ class PValueSyntaxSpec extends FlatSpec with Matchers {
     testValue.fArray.mapValues[Int, Int](i => i * 3).unsafe.to[Vector[Int]] shouldBe List(3, 6, 9)
     testValue.mapWithKey[Boolean, String]((k, v) => k -> v.toString).unsafe shouldBe testValue.update('fBool, PValue("true"))
   }
+
+  "Any type with available encoder" should "convert to PValue" in {
+    10.toPValue shouldBe PValue(10)
+  }
 }

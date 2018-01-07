@@ -2,6 +2,8 @@ package io.parsek.shapeless
 
 import io.parsek.PValue
 import io.parsek.PValue._
+import io.parsek._
+import io.parsek.PResult.{valid, invalid}
 import io.parsek.implicits._
 import io.parsek.shapeless.implicits._
 import org.scalatest.{Matchers, WordSpec}
@@ -15,9 +17,9 @@ class HListDecoderSpec extends WordSpec with Matchers {
 
     "break decoding of an Option[T]" in {
       import io.parsek.instances.DecoderInstances._
-      PInt(3).as[Option[Int]] shouldEqual Right(Some(3))
-      PNull.as[Option[Int]] shouldEqual Right(None)
-      PString("not int").as[Option[Int]] should be(a[Left[Throwable, _]])
+      PInt(3).as[Option[Int]] shouldEqual valid(Some(3))
+      PNull.as[Option[Int]] shouldEqual valid(None)
+      PString("not int").as[Option[Int]] should be(a[PError])
     }
 
     "decode case classes" in {
@@ -35,10 +37,10 @@ class HListDecoderSpec extends WordSpec with Matchers {
           flat = 25)
       )
 
-      val pvalue: PValue = pmap(
+      val pvalue: PValue = PValue.pmap(
         'name -> PString("Eugene"),
         'surname -> PString("Lukashin"),
-        'address -> pmap(
+        'address -> PValue.pmap(
           'flat -> PInt(25),
           'building -> PInt(13),
           'city -> PString("Leningrad"),
@@ -49,24 +51,24 @@ class HListDecoderSpec extends WordSpec with Matchers {
       pvalue.asUnsafe[User] shouldEqual jenya
 
       case class Small(value: Int)
-      pmap('value -> PInt(3)).asUnsafe[Small] shouldEqual Small(3)
+      PValue.pmap('value -> PInt(3)).asUnsafe[Small] shouldEqual Small(3)
 
       case class SmallOpt(value: Option[Int])
-      pmap('value -> PInt(3)).asUnsafe[SmallOpt] shouldEqual SmallOpt(Some(3))
+      PValue.pmap('value -> PInt(3)).asUnsafe[SmallOpt] shouldEqual SmallOpt(Some(3))
     }
 
     "decode case classes with defaults" in {
       case class A(name: String, b: Int = 4)
 
-      pmap('name -> PString("aname"), 'b -> PInt(5)).asUnsafe[A] shouldEqual A("aname", 5)
-      pmap('name -> PString("aname")).asUnsafe[A] shouldEqual A("aname")
-      pmap('name344 -> PString("aname")).as[A] should be(a[Left[_, _]])
+      PValue.pmap('name -> PString("aname"), 'b -> PInt(5)).asUnsafe[A] shouldEqual A("aname", 5)
+      PValue.pmap('name -> PString("aname")).asUnsafe[A] shouldEqual A("aname")
+      PValue.pmap('name344 -> PString("aname")).as[A] should be(a[PError])
     }
 
     "decode case classes with Options" in {
       case class B(name: String, b: Option[Int] = None)
-      pmap('name -> PString("aname"), 'b -> PInt(5)).asUnsafe[B] shouldEqual B("aname", Some(5))
-      pmap('name -> PString("aname")).as[B] shouldEqual Right(B("aname", None))
+      PValue.pmap('name -> PString("aname"), 'b -> PInt(5)).asUnsafe[B] shouldEqual B("aname", Some(5))
+      PValue.pmap('name -> PString("aname")).as[B] shouldEqual valid(B("aname", None))
     }
   }
 
@@ -76,22 +78,22 @@ class HListDecoderSpec extends WordSpec with Matchers {
       import Configuration.Strict._
 
       case class C(f1: String)
-      pmap('f1 -> PString("f1"), 'unexpected -> PInt(5)).as[C] should be(a[Left[_, _]])
+      PValue.pmap('f1 -> PString("f1"), 'unexpected -> PInt(5)).as[C] should be(a[PError])
 
       case class D(a: String, b: Option[Int])
 
-      pmap('a -> PString("a")).as[D] should be(a[Left[_, _]])
-      pmap('a -> PString("a"), 'b -> PInt(45)).asUnsafe[D] should be(D("a", Some(45)))
+      PValue.pmap('a -> PString("a")).as[D] should be(a[PError])
+      PValue.pmap('a -> PString("a"), 'b -> PInt(45)).asUnsafe[D] should be(D("a", Some(45)))
     }
 
-    "Work with non-matching PValues in weak Configuration" in {
+    "work with non-matching PValues in weak Configuration" in {
       case class C(f1: String)
-      pmap('f1 -> PString("f1"), 'unexpected -> PInt(5)).asUnsafe[C] should be(C("f1"))
+      PValue.pmap('f1 -> PString("f1"), 'unexpected -> PInt(5)).asUnsafe[C] should be(C("f1"))
 
       case class D(a: String, b: Option[Int])
 
-      pmap('a -> PString("a")).asUnsafe[D] should be(D("a", None))
-      pmap('a -> PString("a"), 'b -> PInt(45)).asUnsafe[D] should be(D("a", Some(45)))
+      PValue.pmap('a -> PString("a")).asUnsafe[D] should be(D("a", None))
+      PValue.pmap('a -> PString("a"), 'b -> PInt(45)).asUnsafe[D] should be(D("a", Some(45)))
     }
   }
 

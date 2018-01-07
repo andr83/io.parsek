@@ -1,11 +1,11 @@
 package io.parsek
 
-import java.time.{Instant, LocalDate, ZoneId}
 import java.time.format.DateTimeFormatter
 import java.time.temporal.{TemporalAccessor, TemporalQuery}
+import java.time.{Instant, LocalDate, ZoneId}
 
 /**
-  * @author andr83
+  * @author Andrei Tupitcyn
   */
 class PValueFormatter {
   def formatInstant(time: Instant): Long Either String = Left(time.toEpochMilli)

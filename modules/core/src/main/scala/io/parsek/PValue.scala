@@ -5,7 +5,7 @@ import java.time.{Instant, LocalDate}
 import scala.language.dynamics
 
 /**
-  * @author andr83
+  * @author Andrei Tupitcyn
   */
 sealed trait PValue extends Product with Serializable with Dynamic {
 
