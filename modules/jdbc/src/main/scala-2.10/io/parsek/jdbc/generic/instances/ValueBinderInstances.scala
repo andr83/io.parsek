@@ -117,7 +117,7 @@ trait ValueBinderInstances extends ParameterTypeMetaInstances {
               index + 1
             }
           }
-          //case other => throw new IllegalArgumentException(s"Expected PArray value to bind to PreparedStatement but got $other")
+          case other => throw new IllegalArgumentException(s"Expected PArray value to bind to PreparedStatement but got $other")
         }
       }
       case Some(PBooleanType) => ValueBinder.wrap(sqlArrayFromTraversableBinder[Boolean, Vector[Boolean]](booleanTypeMeta))
@@ -128,9 +128,9 @@ trait ValueBinderInstances extends ParameterTypeMetaInstances {
       case Some(PStringType) => ValueBinder.wrap(sqlArrayFromTraversableBinder[String, Vector[String]](stringTypeMeta))
       case Some(PDateType) => ValueBinder.wrap(sqlArrayFromTraversableBinder[java.sql.Date, Vector[java.sql.Date]](sqlDateTypeMeta))
       case Some(PBinaryType) => ValueBinder.wrap(sqlArrayFromTraversableBinder[Array[Byte], Vector[Array[Byte]]](bytesTypeMeta))
-      //case Some(unsupportedType) => throw new IllegalStateException(s"Cannot bind PArrayType($unsupportedType) value to JDBC PreparedStatement")
+      case Some(unsupportedType) => throw new IllegalStateException(s"Cannot bind PArrayType($unsupportedType) value to JDBC PreparedStatement")
     }
-    //case unsupportedType => throw new IllegalStateException(s"Cannot bind $unsupportedType value to JDBC PreparedStatement")
+    case unsupportedType => throw new IllegalStateException(s"Cannot bind $unsupportedType value to JDBC PreparedStatement")
   }
 
   def pvalue2AnyRef(pv: PValue): AnyRef = pv match {
