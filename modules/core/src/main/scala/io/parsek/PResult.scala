@@ -1,8 +1,6 @@
 package io.parsek
 
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.kernel.Semigroup
+import io.parsek.algebra.Semigroup
 
 import scala.util.{Failure, Success, Try}
 
@@ -85,10 +83,6 @@ sealed abstract class PResult[+A] {
   @inline def toEither: Either[Throwable, A] = fold(e => Left(e.head), Right.apply)
 
   @inline def toEitherNel: Either[NonEmptyList[Throwable], A] = fold(Left.apply, Right.apply)
-
-  @inline def toValidated: Validated[Throwable, A] = fold(e=> Invalid(e.head), Valid.apply)
-
-  @inline def toValidatedNel: ValidatedNel[Throwable, A] = fold(Invalid.apply, Valid.apply)
 }
 
 object PResult {

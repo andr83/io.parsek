@@ -1,14 +1,13 @@
 package io.parsek.instances
 
-import cats.kernel.Monoid
 import io.parsek.PValue
+import io.parsek.algebra.Semigroup
 
 /**
   * @author Andrei Tupitcyn
-  *         created on 20.06.17
   */
 trait PMapInstances {
-  implicit val pmapMonoid = new Monoid[Map[Symbol, PValue]]  {
+  implicit val pmapSemigroup = new Semigroup[Map[Symbol, PValue]]  {
 
     def empty: Map[Symbol, PValue] = Map.empty
 

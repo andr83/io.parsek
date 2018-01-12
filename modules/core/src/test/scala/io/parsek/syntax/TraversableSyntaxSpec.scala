@@ -1,6 +1,6 @@
 package io.parsek.syntax
 
-import cats.data.NonEmptyList
+import io.parsek.NonEmptyList
 import io.parsek.syntax.TraversableSyntax._
 import org.scalatest.{FlatSpec, Matchers}
 

@@ -22,6 +22,7 @@ object Library {
     "com.fasterxml.jackson.core" % "jackson-core" % Version.jackson,
     "com.fasterxml.jackson.module" %% "jackson-module-scala" % Version.jackson
   )
+  def reflect(scalaVersion: String) = "org.scala-lang" % "scala-reflect" % scalaVersion
   val scalaArm = "com.jsuereth" % "scala-arm_2.11"% Version.scalaArm
 
   val h2 =  "com.h2database" % "h2" % Version.h2

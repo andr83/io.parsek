@@ -1,7 +1,6 @@
 package io.parsek.syntax
 
-import cats.data.NonEmptyList
-import io.parsek.{PError, PResult, PSuccess}
+import io.parsek.{NonEmptyList, PError, PResult, PSuccess}
 
 import scala.collection.generic.CanBuildFrom
 import scala.language.higherKinds

@@ -2,10 +2,9 @@ package io.parsek.jdbc.instances
 
 import java.sql.ResultSet
 
-import cats.data.NonEmptyList
 import io.parsek.implicits._
 import io.parsek.jdbc.{ColumnReader, JdbcConfig, JdbcUtils, ResultReader, RowReader}
-import io.parsek.{PError, PResult, PSuccess, PValue}
+import io.parsek._
 
 import scala.collection.generic.CanBuildFrom
 import scala.language.higherKinds

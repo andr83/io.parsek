@@ -2,7 +2,6 @@ package io
 
 import java.time.Instant
 
-import cats.data.NonEmptyList
 import io.parsek.PValue._
 import io.parsek.implicits._
 import io.parsek.optics.LensPath

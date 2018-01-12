@@ -7,7 +7,7 @@ scalaVersion in ThisBuild := "2.11.11"
 lazy val core = parsekModule("core")
   .settings(
     libraryDependencies ++= Seq(
-      Library.cats,
+      Library.reflect(scalaVersion.value),
       Library.scalaTest
     )
   )
