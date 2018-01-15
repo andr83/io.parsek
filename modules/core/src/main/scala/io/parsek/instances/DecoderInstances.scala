@@ -11,6 +11,8 @@ import io.parsek.syntax.traversable._
 import scala.reflect.runtime.universe.TypeTag
 import scala.collection.generic.CanBuildFrom
 
+import scala.language.higherKinds
+
 /**
   * @author Andrei Tupitcyn
   */

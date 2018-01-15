@@ -86,7 +86,7 @@ class JdbcQueryExecutor(
 
   override def batchInsert(table: String, it: Iterable[PMap], scheme: PStructType): Unit = {
     val nameConverter = config.nameConverter
-    val binders = scheme.fields.map(f => f.name -> (Symbol(nameConverter(f.name.name)), valueBinder(f.dataType))).toMap
+    val binders = scheme.fields.map(f => f.name -> (Symbol(nameConverter(f.name.name)) -> valueBinder(f.dataType))).toMap
 
     val sql =
       s"""

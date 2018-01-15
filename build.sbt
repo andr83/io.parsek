@@ -1,13 +1,13 @@
-import sbt._
+import sbt.Keys.scalaVersion
+import sbt.{ThisBuild, _}
 
-organization in ThisBuild := "io.parsek"
 
-scalaVersion in ThisBuild := "2.11.11"
+crossScalaVersions := Seq("2.10.6", "2.11.12", "2.12.4")
 
 lazy val core = parsekModule("core")
   .settings(
     libraryDependencies ++= Seq(
-      Library.reflect(scalaVersion.value),
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value,
       Library.scalaTest
     )
   )
@@ -29,23 +29,13 @@ lazy val jdbc = parsekModule("jdbc")
   )
   .dependsOn(core)
 
-lazy val calcite = parsekModule("calcite")
-  .settings(
-    libraryDependencies ++= Seq(
-      Library.calcite,
-      Library.calciteLinq4j,
-      Library.scalaTest,
-      Library.scalaMeter
-    )
-  )
-  .dependsOn(core, jdbc)
-
 lazy val shapeless = parsekModule("shapeless")
   .settings(
-    libraryDependencies ++= Seq(
-      Library.shapeless,
-      Library.scalaTest
-    )
+    libraryDependencies ++=
+      Library.shapeless ++
+      Seq(
+        Library.scalaTest
+      )
   )
   .dependsOn(core)
 
@@ -53,7 +43,17 @@ def parsekModule(path: String): Project = {
   val id = path.split("-").reduce(_ + _.capitalize)
   Project(id, file(s"modules/$path"))
     .settings(
+      organization := "io.parsek",
       moduleName := s"parsek-$path",
-      name := s"Parsek $id"
+      name := s"Parsek $id",
+      crossScalaVersions := Seq("2.10.6", "2.11.12", "2.12.4"),
+      ThisBuild / scalaVersion := "2.12.4",
+      Compile / scalacOptions ++= Seq(
+        "-deprecation",
+        "-unchecked",
+        "-encoding",
+        "utf-8"
+      ),
+      scalacOptions += "-feature"
     )
 }

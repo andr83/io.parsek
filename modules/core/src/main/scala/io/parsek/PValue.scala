@@ -51,7 +51,7 @@ object PValue {
 
   final def fromBytes(v: Array[Byte]): PValue = PBytes(v)
 
-  def apply[A : Encoder](a: A): PValue = implicitly[Encoder[A]].apply(a)
+  def apply[A](a: A)(implicit encoder: Encoder[A]): PValue = encoder(a)
 
   final case class PBoolean(value: Boolean) extends PValue
 

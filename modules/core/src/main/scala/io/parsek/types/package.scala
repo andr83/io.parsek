@@ -7,7 +7,7 @@ import scala.language.postfixOps
 /**
   * @author Andrei Tupitcyn
   */
-package object types {
+package types {
   trait PValueTyped {
     val valueType: PType
     val value: PValue

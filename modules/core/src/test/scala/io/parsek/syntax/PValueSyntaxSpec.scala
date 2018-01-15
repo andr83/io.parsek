@@ -1,4 +1,4 @@
-package io.parsek.optics
+package io.parsek.syntax
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -19,7 +19,7 @@ class PValueSyntaxSpec extends FlatSpec with Matchers {
     'fLong -> PValue(100L),
     'fDouble -> PValue(12.3),
     'fString -> PValue("hello"),
-    'fDate -> PValue(today),
+    'fDate -> PValue.apply(today),
     'fArray -> PValue(List(1, 2, 3))
   )
 

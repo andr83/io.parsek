@@ -2,6 +2,7 @@ package io.parsek.syntax
 
 import io.parsek.optics.Getter
 import io.parsek.{Encoder, PResult, PValue}
+import scala.language.implicitConversions
 
 /**
   * @author Andrei Tupitcyn
