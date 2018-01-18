@@ -47,6 +47,7 @@ def parsekModule(path: String): Project = {
       moduleName := s"parsek-$path",
       name := s"Parsek $id",
       crossScalaVersions := Seq("2.10.6", "2.11.12", "2.12.4"),
+      publishTo := Some("Artifactory Realm" at "https://rms.evolutiongaming.com/mvn-spark"),
       ThisBuild / scalaVersion := "2.12.4",
       Compile / scalacOptions ++= Seq(
         "-deprecation",

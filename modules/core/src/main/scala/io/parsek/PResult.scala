@@ -31,6 +31,13 @@ sealed abstract class PResult[+A] {
       case e: PError => e
     }
 
+  @inline def mapIn[B](fa: PartialFunction[A, B]): PResult[B] =
+    this match {
+      case PSuccess(a, warnings) if fa.isDefinedAt(a) => PSuccess(fa(a), warnings)
+      case PSuccess(a, _) => PError(TypeCastFailure(s"Can not apply partial map function to $a"))
+      case e: PError => e
+    }
+
   @inline def errorMap(fe: ThrowableNel => ThrowableNel): PResult[A] =
     this match {
       case PError(errors) => PError(fe(errors))
@@ -47,6 +54,13 @@ sealed abstract class PResult[+A] {
     this match {
       case PSuccess(a, warnings) if warnings.nonEmpty => fa(a).withWarnings(warnings)
       case PSuccess(a, _) => fa(a)
+      case e: PError => e
+    }
+
+  @inline def flatMapIn[B](fa: PartialFunction[A, PResult[B]]): PResult[B] =
+    this match {
+      case PSuccess(a, warnings) if fa.isDefinedAt(a) => fa(a).withWarnings(warnings)
+      case PSuccess(a, _) => PError(TypeCastFailure(s"Can not apply partial flatMap function to $a"))
       case e: PError => e
     }
 

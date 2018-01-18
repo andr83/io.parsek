@@ -11,7 +11,7 @@ import org.scalatest.{FlatSpec, Matchers}
 class JsonSpec extends FlatSpec with Matchers {
   "Json SerDe" should "parse string to PValue and serialize back" in {
     val str =
-      """{"data":{"currency":"Kč"},"sessionId":"af652b63d57c6cb508fd9176ffkf65e48c78ef38","created":1467158651342}"""
+      """{"data":{"currency":"Kč"},"sessionId":"af652b63d57c6cb508fd9176ffkf65e48c78ef38","created":1467158651342,"array":[1,2,3]}"""
 
     val serde = JsonSerDe()
     val pv = serde.read(str).unsafe

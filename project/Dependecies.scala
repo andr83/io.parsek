@@ -2,7 +2,7 @@ import sbt._
 
 
 object Version {
-  val jackson = "2.8.8"
+  val jackson = "2.8.9"
   val h2 = "1.4.195"
   val paradisePlugin = "2.1.0"
   val scalaArm = "2.0"

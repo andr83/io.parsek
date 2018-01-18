@@ -67,4 +67,21 @@ class ProjectionSpec extends FlatSpec with Matchers {
       'field1 -> PValue.pmap('f1 -> PValue(100), 'f2 -> PValue(2), 'f3 -> PValue.pmap('f1 -> PValue(300)), 'f4 -> PValue.pmap('f1 -> PValue(0)))
     ))
   }
+
+  it should "remove keys with empty values" in {
+    val p = Projection(
+      'newField -> root.field1.as[PValue],
+      'innerField -> Projection(
+        'inner1 -> root.field2.asOpt[String],
+        'inner2 -> root.field3.asOpt[Double]
+      )
+    )
+
+    val res = p.get(pmap(
+      'field1 -> PValue(21)
+    ))
+    res shouldBe PResult.valid(pmap(
+      'newField -> PValue(21)
+    ))
+  }
 }

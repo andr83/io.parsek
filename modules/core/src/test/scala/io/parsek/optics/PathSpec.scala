@@ -25,6 +25,7 @@ class PathSpec extends FlatSpec with Matchers {
     root.at('fLong).to[Long](testValue) shouldBe 100L
     root.at('fDouble).to[Double](testValue) shouldBe 12.3
     root.at('fString).to[String](testValue) shouldBe "hello"
+    root.at('fMap).at('f1).to[Int](testValue) shouldBe 1
     root.at('fMap).at('f3).to[Map[String, Int]](testValue) shouldBe Map("f1" -> 3)
     root.at('fMap).at('f4).to[Map[Symbol, Int]](testValue) shouldBe Map('f1 -> 0)
     root.at('fArray).to[List[PValue]](testValue) shouldBe List(PValue(1), PValue(2), PValue(3))
@@ -38,6 +39,7 @@ class PathSpec extends FlatSpec with Matchers {
     root.fDouble.to[Double](testValue) shouldBe 12.3
     root.fString.to[String](testValue) shouldBe "hello"
     root.fArray.to[List[Int]](testValue) shouldBe List(1, 2, 3)
+    root.fMap.f1.to[Int](testValue) shouldBe 1
   }
 
   it should "allow map and modify values in" in {

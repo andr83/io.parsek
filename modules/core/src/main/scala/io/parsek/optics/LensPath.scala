@@ -37,7 +37,7 @@ case class LensPath(private val lens: Lens[PValue, PValue])
   /** Replace target with new value in source PValue */
   def set[A: Encoder](a: A): PValue => PResult[PValue] = lens.set(implicitly[Encoder[A]].apply(a))
 
-  override def selectDynamic(field: String): LensPath = LensPath(mapLens.compose(index(Symbol(field))))
+  override def selectDynamic(field: String): LensPath = at(field)
 }
 
 object LensPath {

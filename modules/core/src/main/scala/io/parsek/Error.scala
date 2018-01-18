@@ -10,10 +10,11 @@ sealed abstract class Error(message: String, underlying: Throwable) extends Exce
 final case class TypeCastFailure(message: String) extends Error(message, null)
 
 final case class ParsingFailure(message: String, underlying: Throwable) extends Error(message, underlying)
+
 final case class TraverseFailure(message: String) extends Error(message, null)
 
 final case class NullValue(message: String) extends Error(message, null)
 
 final case class NullField(field: Symbol, message: String) extends Error(message, null)
 
-final case object FilterFailure extends Error("FilterFailure", null)
+case object FilterFailure extends Error("FilterFailure", null)
