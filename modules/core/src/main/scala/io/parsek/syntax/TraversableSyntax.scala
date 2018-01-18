@@ -28,6 +28,7 @@ trait TraversableSyntax0 {
       val (lb, rb) = underlying.foldLeft((cbfL(), cbfR())) {
         case ((lBuilder, rBuilder), Right(r: R@unchecked)) => (lBuilder, rBuilder += r)
         case ((lBuilder, rBuilder), Left(l: L@unchecked)) => (lBuilder += l, rBuilder)
+        case _ => throw new IllegalStateException
       }
       (lb.result(), rb.result())
     }
@@ -66,6 +67,7 @@ trait TraversableSyntax extends TraversableSyntax0 {
         case ((lBuilder, rBuilder), Left(nel: NonEmptyList[L])) =>
           nel.toList.foreach(l => lBuilder += l)
           (lBuilder, rBuilder)
+        case _ => throw new IllegalStateException
       }
       (lb.result(), rb.result())
     }
@@ -90,6 +92,7 @@ trait TraversableSyntax extends TraversableSyntax0 {
         case ((lBuilder, rBuilder), PError(nel)) =>
           nel.toList.foreach(lBuilder += _)
           (lBuilder, rBuilder)
+        case _ => throw new IllegalStateException
       }
       (lb.result(), rb.result())
     }

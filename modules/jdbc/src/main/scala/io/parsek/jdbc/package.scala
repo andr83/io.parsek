@@ -1,9 +1,5 @@
 package io.parsek
 
-import java.sql.{JDBCType, PreparedStatement, ResultSet}
-
-import scala.language.{higherKinds, implicitConversions}
-
 /**
   * Jdbc module add simple jdbc layer for ETL application with selecting and batch operation support
   *

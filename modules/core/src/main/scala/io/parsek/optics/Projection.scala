@@ -4,8 +4,6 @@ import io.parsek.PValue.{PArray, PMap}
 import io.parsek.implicits._
 import io.parsek.{PResult, PValue}
 
-import scala.language.implicitConversions
-
 /**
   * @author Andrei Tupitcyn
   */

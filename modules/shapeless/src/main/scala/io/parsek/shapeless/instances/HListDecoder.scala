@@ -74,8 +74,7 @@ trait HListDecoder {
                                                          gen: LabelledGeneric.Aux[H, T],
                                                          td: Lazy[DecoderWithDefaults[T]],
                                                          defaults: Default.AsRecord.Aux[H, D],
-                                                         defaultEncoder: Lazy[Encoder[D]],
-                                                         decodeConfiguration: Configuration): Decoder[H] =
+                                                         defaultEncoder: Lazy[Encoder[D]]): Decoder[H] =
     new Decoder[H] {
       def apply(pValue: PValue): PResult[H] = {
         val defaultPValue: Map[Symbol, PValue] =

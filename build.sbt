@@ -1,8 +1,36 @@
 import sbt.Keys.scalaVersion
-import sbt.{ThisBuild, _}
+import sbt._
+import ReleaseTransformations._
 
+val scalacOpts = Seq(
+  "-encoding",
+  "UTF-8",
+  "-deprecation", // warning and location for usages of deprecated APIs
+  "-feature", // warning and location for usages of features that should be imported explicitly
+  "-language:postfixOps",
+  "-language:higherKinds",             // Allow higher-kinded types
+  "-language:implicitConversions",
+  "-unchecked", // additional warnings where generated code depends on assumptions
+  "-Xlint", // recommended additional warnings
+  "-Xcheckinit", // runtime error when a val is not initialized due to trait hierarchies (instead of NPE somewhere else)
+  "-Xfatal-warnings", // all warnings become errors
+  "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver
+  "-Ywarn-inaccessible",
+  "-Ywarn-dead-code",
+  //"-Ywarn-unused-import"
+)
 
-crossScalaVersions := Seq("2.10.6", "2.11.12", "2.12.4")
+lazy val root = project
+  .in(file("."))
+  .aggregate(
+    core,
+    jackson,
+    shapeless,
+    jdbc
+  )
+  .settings(
+    skip in publish := true
+  )
 
 lazy val core = parsekModule("core")
   .settings(
@@ -47,14 +75,36 @@ def parsekModule(path: String): Project = {
       moduleName := s"parsek-$path",
       name := s"Parsek $id",
       crossScalaVersions := Seq("2.10.6", "2.11.12", "2.12.4"),
-      publishTo := Some("Artifactory Realm" at "https://rms.evolutiongaming.com/mvn-spark"),
-      ThisBuild / scalaVersion := "2.12.4",
-      Compile / scalacOptions ++= Seq(
-        "-deprecation",
-        "-unchecked",
-        "-encoding",
-        "utf-8"
+      scalaVersion := "2.12.4",
+      scalacOptions ++= scalacOpts,
+      scalacOptions in (Compile, console) --= Seq("-Ywarn-unused:imports", "-Xfatal-warnings"),
+      releaseCrossBuild := true,
+      releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+      releaseProcess := Seq[ReleaseStep](
+        checkSnapshotDependencies,
+        inquireVersions,
+        runClean,
+        runTest,
+        setReleaseVersion,
+        commitReleaseVersion,
+        tagRelease,
+        publishArtifacts,
+        setNextVersion,
+        commitNextVersion,
+        releaseStepCommand("sonatypeReleaseAll"),
+        pushChanges
       ),
-      scalacOptions += "-feature"
+      homepage := Some(url("https://github.com/andr83/io.parsek")),
+      scmInfo := Some(ScmInfo(url("https://github.com/andr83/io.parsek"),
+                        "git@github.com:andr83/io.parsek.git")),
+      developers := List(Developer("andr83", "Andrei Tupitcyn", "andrew.tupitsin@gmail.com", url("https://github.com/andr83"))),
+      licenses += ("MIT", url("https://opensource.org/licenses/MIT")),
+      publishMavenStyle := true,
+      publishTo := Some(
+        if (isSnapshot.value)
+          Opts.resolver.sonatypeSnapshots
+        else
+          Opts.resolver.sonatypeStaging
+      )
     )
 }
