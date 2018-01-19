@@ -97,7 +97,10 @@ def parsekModule(path: String): Project = {
       homepage := Some(url("https://github.com/andr83/io.parsek")),
       scmInfo := Some(ScmInfo(url("https://github.com/andr83/io.parsek"),
                         "git@github.com:andr83/io.parsek.git")),
-      developers := List(Developer("andr83", "Andrei Tupitcyn", "andrew.tupitsin@gmail.com", url("https://github.com/andr83"))),
+      developers := List(
+        Developer("andr83", "Andrei Tupitcyn", "andrew.tupitsin@gmail.com", url("https://github.com/andr83")),
+        Developer("fabura", "Bulat Fattahov", "fabura@yandex.ru", url("https://github.com/fabura"))
+      ),
       licenses += ("MIT", url("https://opensource.org/licenses/MIT")),
       publishMavenStyle := true,
       publishTo := Some(

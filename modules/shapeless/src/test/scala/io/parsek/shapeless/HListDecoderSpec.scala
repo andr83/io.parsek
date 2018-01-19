@@ -3,7 +3,7 @@ package io.parsek.shapeless
 import io.parsek.PValue
 import io.parsek.PValue._
 import io.parsek._
-import io.parsek.PResult.{valid, invalid}
+import io.parsek.PResult.valid
 import io.parsek.implicits._
 import io.parsek.shapeless.implicits._
 import org.scalatest.{Matchers, WordSpec}
