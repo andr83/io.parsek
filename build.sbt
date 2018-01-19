@@ -20,6 +20,44 @@ val scalacOpts = Seq(
   //"-Ywarn-unused-import"
 )
 
+val commonSettings = Seq(
+  organization := "io.parsek",
+  crossScalaVersions := Seq("2.10.6", "2.11.12", "2.12.4"),
+  scalaVersion := "2.12.4",
+  scalacOptions ++= scalacOpts,
+  scalacOptions in (Compile, console) --= Seq("-Ywarn-unused:imports", "-Xfatal-warnings"),
+  releaseCrossBuild := true,
+  releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+  releaseProcess := Seq[ReleaseStep](
+    checkSnapshotDependencies,
+    inquireVersions,
+    runClean,
+    runTest,
+    setReleaseVersion,
+    commitReleaseVersion,
+    tagRelease,
+    releaseStepCommand("sonatypeReleaseAll"),
+    setNextVersion,
+    commitNextVersion,
+    pushChanges
+  ),
+  homepage := Some(url("https://github.com/andr83/io.parsek")),
+  scmInfo := Some(ScmInfo(url("https://github.com/andr83/io.parsek"),
+    "git@github.com:andr83/io.parsek.git")),
+  developers := List(
+    Developer("andr83", "Andrei Tupitcyn", "andrew.tupitsin@gmail.com", url("https://github.com/andr83")),
+    Developer("fabura", "Bulat Fattahov", "fabura@yandex.ru", url("https://github.com/fabura"))
+  ),
+  licenses += ("MIT", url("https://opensource.org/licenses/MIT")),
+  publishMavenStyle := true,
+  publishTo := Some(
+    if (isSnapshot.value)
+      Opts.resolver.sonatypeSnapshots
+    else
+      Opts.resolver.sonatypeStaging
+  )
+)
+
 lazy val root = project
   .in(file("."))
   .aggregate(
@@ -28,7 +66,9 @@ lazy val root = project
     shapeless,
     jdbc
   )
+  .settings(commonSettings)
   .settings(
+    publishArtifact := false,
     skip in publish := true
   )
 
@@ -71,43 +111,8 @@ def parsekModule(path: String): Project = {
   val id = path.split("-").reduce(_ + _.capitalize)
   Project(id, file(s"modules/$path"))
     .settings(
-      organization := "io.parsek",
       moduleName := s"parsek-$path",
-      name := s"Parsek $id",
-      crossScalaVersions := Seq("2.10.6", "2.11.12", "2.12.4"),
-      scalaVersion := "2.12.4",
-      scalacOptions ++= scalacOpts,
-      scalacOptions in (Compile, console) --= Seq("-Ywarn-unused:imports", "-Xfatal-warnings"),
-      releaseCrossBuild := true,
-      releasePublishArtifactsAction := PgpKeys.publishSigned.value,
-      releaseProcess := Seq[ReleaseStep](
-        checkSnapshotDependencies,
-        inquireVersions,
-        runClean,
-        runTest,
-        setReleaseVersion,
-        commitReleaseVersion,
-        tagRelease,
-        publishArtifacts,
-        setNextVersion,
-        commitNextVersion,
-        releaseStepCommand("sonatypeReleaseAll"),
-        pushChanges
-      ),
-      homepage := Some(url("https://github.com/andr83/io.parsek")),
-      scmInfo := Some(ScmInfo(url("https://github.com/andr83/io.parsek"),
-                        "git@github.com:andr83/io.parsek.git")),
-      developers := List(
-        Developer("andr83", "Andrei Tupitcyn", "andrew.tupitsin@gmail.com", url("https://github.com/andr83")),
-        Developer("fabura", "Bulat Fattahov", "fabura@yandex.ru", url("https://github.com/fabura"))
-      ),
-      licenses += ("MIT", url("https://opensource.org/licenses/MIT")),
-      publishMavenStyle := true,
-      publishTo := Some(
-        if (isSnapshot.value)
-          Opts.resolver.sonatypeSnapshots
-        else
-          Opts.resolver.sonatypeStaging
-      )
+      name := s"Parsek $id"
     )
+    .settings(commonSettings)
 }
