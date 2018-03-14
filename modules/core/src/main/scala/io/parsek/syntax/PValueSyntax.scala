@@ -11,6 +11,7 @@ import scala.language.implicitConversions
 /** Extending PValue with additional ops */
 trait PValueSyntax {
   implicit final def pvalueSyntaxOps(v: PValue): PValueOps = new PValueOps(v)
+  implicit final def a2PValue[A : Encoder](a: A): PValue = implicitly[Encoder[A]].apply(a)
 }
 
 /**

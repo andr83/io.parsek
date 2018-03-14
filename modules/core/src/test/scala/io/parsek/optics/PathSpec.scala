@@ -9,13 +9,13 @@ import org.scalatest.{FlatSpec, Matchers}
   */
 class PathSpec extends FlatSpec with Matchers {
   val testValue = pmap(
-    'fBool -> PValue(true),
-    'fInt -> PValue(10),
-    'fLong -> PValue(100L),
-    'fDouble -> PValue(12.3),
-    'fString -> PValue("hello"),
-    'fArray -> PValue(List(1, 2, 3)),
-    'fMap -> PValue.pmap('f1 -> PValue(1), 'f2 -> PValue(2), 'f3 -> PValue.pmap('f1 -> PValue(3)), 'f4 -> PValue.pmap('f1 -> PValue(0)))
+    'fBool -> true,
+    'fInt -> 10,
+    'fLong -> 100L,
+    'fDouble -> 12.3,
+    'fString -> "hello",
+    'fArray -> List(1, 2, 3),
+    'fMap -> pmap('f1 -> 1, 'f2 -> 2, 'f3 -> pmap('f1 -> 3), 'f4 -> pmap('f1 -> 0))
   )
 
   "PPath" should "focus" in {

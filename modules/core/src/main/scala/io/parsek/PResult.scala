@@ -34,7 +34,7 @@ sealed abstract class PResult[+A] {
   @inline def mapIn[B](fa: PartialFunction[A, B]): PResult[B] =
     this match {
       case PSuccess(a, warnings) if fa.isDefinedAt(a) => PSuccess(fa(a), warnings)
-      case PSuccess(a, _) => PError(TypeCastFailure(s"Can not apply partial map function to $a"))
+      case PSuccessA(a) => PError(TypeCastFailure(s"Can not apply partial map function to $a"))
       case e: PError => e
     }
 
@@ -46,21 +46,21 @@ sealed abstract class PResult[+A] {
 
   @inline def foreach(f: A => Unit): Unit =
     this match {
-      case PSuccess(a, _) => f(a)
+      case PSuccessA(a) => f(a)
       case _ => ()
     }
 
   @inline def flatMap[B](fa: A => PResult[B]): PResult[B] =
     this match {
       case PSuccess(a, warnings) if warnings.nonEmpty => fa(a).withWarnings(warnings)
-      case PSuccess(a, _) => fa(a)
+      case PSuccessA(a) => fa(a)
       case e: PError => e
     }
 
   @inline def flatMapIn[B](fa: PartialFunction[A, PResult[B]]): PResult[B] =
     this match {
       case PSuccess(a, warnings) if fa.isDefinedAt(a) => fa(a).withWarnings(warnings)
-      case PSuccess(a, _) => PError(TypeCastFailure(s"Can not apply partial flatMap function to $a"))
+      case PSuccessA(a) => PError(TypeCastFailure(s"Can not apply partial flatMap function to $a"))
       case e: PError => e
     }
 
@@ -123,6 +123,10 @@ object PResult {
 case class PSuccess[A](private val value: A, warnings: Seq[Throwable] = Seq.empty) extends PResult[A] {
   val isError: Boolean = false
   def get: A = value
+}
+
+object PSuccessA {
+  def unapply[A](res: PSuccess[A]): Option[A] = res.toOption
 }
 
 case class PError(errors: NonEmptyList[Throwable]) extends PResult[Nothing] {
