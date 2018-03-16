@@ -168,6 +168,11 @@ final case class NonEmptyList[+A](head: A, tail: List[A]) {
   def foldLeft[B](b: B)(f: (B, A) => B): B =
     tail.foldLeft(f(b, head))(f)
 
+  def foreach(f: A => Unit): Unit = {
+    f(head)
+    tail.foreach(f)
+  }
+
   override def toString: String = s"NonEmpty$toList"
 }
 

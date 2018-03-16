@@ -2,6 +2,7 @@ import sbt._
 
 
 object Version {
+  val cats = "1.0.1"
   val jackson = "2.8.9"
   val h2 = "1.4.195"
   val paradisePlugin = "2.1.0"
@@ -11,6 +12,8 @@ object Version {
 }
 
 object Library {
+  val cats = "org.typelevel" %% "cats-core" % Version.cats
+
   val jackson = Seq(
     "com.fasterxml.jackson.core" % "jackson-core" % Version.jackson,
     "com.fasterxml.jackson.module" %% "jackson-module-scala" % Version.jackson

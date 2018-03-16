@@ -62,6 +62,7 @@ lazy val root = project
   .in(file("."))
   .aggregate(
     core,
+    cats,
     jackson,
     shapeless,
     jdbc
@@ -79,6 +80,15 @@ lazy val core = parsekModule("core")
       Library.scalaTest
     )
   )
+
+lazy val cats = parsekModule("cats")
+  .settings(
+    libraryDependencies ++= Seq(
+      Library.cats % "provided",
+      Library.scalaTest
+    )
+  )
+  .dependsOn(core)
 
 lazy val jackson = parsekModule("jackson")
   .settings(
