@@ -1,5 +1,6 @@
 package io.parsek
 
+import io.parsek.algebra.Empty
 import org.scalatest.{FlatSpec, Inside, Matchers}
 
 /**
@@ -17,5 +18,21 @@ class PResultSpec extends FlatSpec with Matchers with Inside {
         res shouldBe 5
         warns shouldBe ex :: Nil
     }
+  }
+
+  it should "support monadic operations" in {
+    val res1 = for {
+      a <- PResult.valid(10)
+      if a > 1
+    } yield a * a
+
+    res1 shouldBe PResult.valid(100)
+
+    val res2 = for {
+      a <- PResult.valid(10)
+      if a > 10
+    } yield a * a
+
+    res2 shouldBe PResult.empty
   }
 }

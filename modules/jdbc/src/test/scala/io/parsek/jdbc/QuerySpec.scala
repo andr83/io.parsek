@@ -24,31 +24,23 @@ class QuerySpec extends FlatSpec with Matchers {
   val yesterday = LocalDate.now().minusDays(1)
 
   val r1: PMap = pmap(
-    'int_field -> PValue(10),
-    'long_field -> PValue(9876543210L),
+    'int_field -> 10,
+    'long_field -> 9876543210L,
     'bool_field -> PValue.True,
-    'time_field -> PValue(instant),
-    'date_field -> PValue(today),
-    'string_field -> PValue("hello world!"),
-    'array_field -> PValue(Vector(
-      PValue.fromInt(1),
-      PValue.fromInt(2),
-      PValue.fromInt(3))
-    )
+    'time_field -> instant,
+    'date_field -> today,
+    'string_field -> "hello world!",
+    'array_field -> Vector(1, 2, 3)
   )
 
   val r2: PMap = pmap(
-    'int_field -> PValue(11),
-    'long_field -> PValue(-4790L),
+    'int_field -> 11,
+    'long_field -> -4790L,
     'bool_field -> PValue.False,
-    'time_field -> PValue(instant),
-    'date_field -> PValue(yesterday),
-    'string_field -> PValue("who am I?"),
-    'array_field -> PValue(Vector(
-      PValue.fromInt(5),
-      PValue.fromInt(6),
-      PValue.fromInt(7))
-    )
+    'time_field -> instant,
+    'date_field -> yesterday,
+    'string_field -> "who am I?",
+    'array_field -> Vector(5, 6, 7)
   )
 
   def fromIO[A](test: => JdbcIO[A]): Unit = {
@@ -57,8 +49,7 @@ class QuerySpec extends FlatSpec with Matchers {
     val qe = JdbcQueryExecutor(conn, LowerCaseConverter)
     try {
       val stmt = conn.createStatement()
-      stmt.executeUpdate(
-        """
+      stmt.executeUpdate("""
           |CREATE TABLE test (
           | int_field INTEGER NOT NULL,
           | long_field BIGINT,
@@ -135,9 +126,29 @@ class QuerySpec extends FlatSpec with Matchers {
   }
 
   it should "work proper with quotes" in {
-    val q = Query(
-      "select * from test where id = ? and test = \"dsf?dfs\"")
+    val q = Query("select * from test where id = ? and test = \"dsf?dfs\"")
       .bind(1, 2)
     q.sql shouldBe "select * from test where id = ? and test = \"dsf?dfs\""
+  }
+
+  it should "support monadic operations" in fromIO {
+    for {
+      res1 <- sql"select int_field from test where int_field = 10".as[Int]
+      if res1 > 1
+      res2 <- sql"select int_field from test where int_field = 11".as[Int]
+    } yield {
+      res1 shouldBe 10
+      res2 shouldBe 11
+    }
+  }
+
+  it should "support monadic operations 2" in fromIO[Option[Int]] {
+    val io: JdbcIO[Option[Int]] = for {
+      res1 <- sql"select int_field from test where int_field = 10".as[Int]
+      if res1 > 10
+    } yield {
+      throw new IllegalStateException()
+    }
+    io
   }
 }

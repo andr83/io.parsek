@@ -1,4 +1,5 @@
-import io.parsek._
+package io.parsek
+
 import io.parsek.implicits._
 import io.parsek.types._
 import org.scalatest.{FlatSpec, Matchers}

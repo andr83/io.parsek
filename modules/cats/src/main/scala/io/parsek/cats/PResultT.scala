@@ -1,7 +1,8 @@
 package io.parsek.cats
 
 import cats.{Applicative, Functor, Monad}
-import io.parsek.{PError, PResult, PSuccess}
+import io.parsek.algebra.Empty
+import io.parsek.{PEmpty, PError, PResult, PSuccess}
 
 /**
   * Monad transformer for PResult
@@ -19,10 +20,11 @@ final case class PResultT[F[_], A](value: F[PResult[A]]) {
       case PSuccess(a, Nil)   => f(a)
       case PSuccess(a, warns) => F.map(f(a))(_.withWarnings(warns))
       case PError(errors)     => F.pure[PResult[B]](PError(errors))
+      case e: PEmpty          => F.pure[PResult[B]](e)
     })
 }
 
 object PResultT {
-  def liftF[F[_], A](fa: F[A])(implicit F: Functor[F]): PResultT[F, A] = PResultT(F.map(fa)(PResult.valid))
+  def liftF[F[_], A : Empty](fa: F[A])(implicit F: Functor[F]): PResultT[F, A] = PResultT(F.map(fa)(PResult.valid))
   def fromPResult[F[_], A](result: PResult[A])(implicit F: Applicative[F]): PResultT[F, A] = PResultT(F.pure(result))
 }

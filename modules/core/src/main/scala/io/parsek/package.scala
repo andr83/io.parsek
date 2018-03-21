@@ -29,7 +29,7 @@ package object parsek {
           } else PResult.invalid(NullField(name, s"Field ${name.name} is empty in $m"))
         case Some(v) =>
           val validateResult = if (!required && nullable) {
-            validateType(v, dataType).fold(nel => PResult.valid(PValue.Null).withWarnings(nel.toList), PResult.valid)
+            validateType(v, dataType).fold(nel => PResult.valid(PValue.Null).withWarnings(nel.toList), PResult.valid, PResult.empty)
           } else validateType(v, dataType)
           validateResult.map(vv => Map(name -> vv))
       }

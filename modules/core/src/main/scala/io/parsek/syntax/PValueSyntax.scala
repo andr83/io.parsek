@@ -1,8 +1,8 @@
 package io.parsek.syntax
 
-
 import io.parsek.PValue._
 import io.parsek._
+import io.parsek.algebra.Empty
 import io.parsek.implicits._
 import io.parsek.types.{PValueTyped, _}
 
@@ -11,7 +11,8 @@ import scala.language.implicitConversions
 /** Extending PValue with additional ops */
 trait PValueSyntax {
   implicit final def pvalueSyntaxOps(v: PValue): PValueOps = new PValueOps(v)
-  implicit final def a2PValue[A : Encoder](a: A): PValue = implicitly[Encoder[A]].apply(a)
+  implicit final def a2PValue[A: Encoder](a: A): PValue =
+    implicitly[Encoder[A]].apply(a)
 }
 
 /**
@@ -22,24 +23,31 @@ final class PValueOps(val value: PValue) extends AnyVal {
 
   /** Get inner value by `key` and safe decode it to type `A` */
   def as[A: Decoder](key: Symbol): PResult[A] = value match {
-    case PMap(map) => implicitly[Decoder[A]].apply(map.getOrElse(key, PValue.Null))
-    case other => throw TraverseFailure(s"Can not traverse to field ${key.name} in $other")
+    case PMap(map) =>
+      implicitly[Decoder[A]].apply(map.getOrElse(key, PValue.Null))
+    case other =>
+      throw TraverseFailure(s"Can not traverse to field ${key.name} in $other")
   }
 
   /** Get inner value by `key` and unsafe decode it to type `A` */
-  def asUnsafe[A: Decoder](key: Symbol): A = implicitly[Decoder[A]].unsafe(value)
+  def asUnsafe[A: Decoder](key: Symbol): A =
+    implicitly[Decoder[A]].unsafe(value)
 
   /** Convert `PValue` to `Option[PValue]`. `PValue.Null` will convert to `None` */
   def opt: Option[PValue] = value match {
     case PValue.Null => None
-    case other => Some(other)
+    case other       => Some(other)
   }
 
   /** Alias to `unsafe` method */
   def to[A: Decoder]: A = asUnsafe[A]
 
   /** Unsafe convert value to type `A` */
-  def asUnsafe[A: Decoder]: A = as[A].fold[A](nel => throw nel.head, identity)
+  def asUnsafe[A: Decoder: Empty]: A =
+    as[A].fold[A](nel => throw nel.head,
+                  identity,
+                  implicitly[Empty[A]].empty
+                    .getOrElse(throw PResult.noSuchElementException))
 
   /** Safe convert value to type `A` */
   def as[A: Decoder]: PResult[A] = implicitly[Decoder[A]].apply(value)
@@ -77,7 +85,8 @@ final class PValueOps(val value: PValue) extends AnyVal {
   }
 
   /** Map value with function `f` taken `(Symbol, A)` as arguments. Applying only to PMap values. */
-  def mapWithKey[A: Decoder, B: Encoder](f: (Symbol, A) => (Symbol, B)): PResult[PValue] = {
+  def mapWithKey[A: Decoder, B: Encoder](
+      f: (Symbol, A) => (Symbol, B)): PResult[PValue] = {
     val d = implicitly[Decoder[A]]
     val e = implicitly[Encoder[B]]
 
@@ -88,7 +97,7 @@ final class PValueOps(val value: PValue) extends AnyVal {
             d(kv._2).fold(_ => kv, v => {
               val (k2, v2) = f(kv._1, v)
               k2 -> e(v2)
-            })
+            }, kv)
           })
         PResult.valid(PValue.fromMap(res))
       case other => PResult.valid(other)

@@ -24,6 +24,7 @@ object PValue {
   final val Null: PValue = PNull
   final val True: PValue = PBoolean(true)
   final val False: PValue = PBoolean(false)
+  final val emptyPMap: PMap = PMap(Map.empty)
 
   final def arr(values: PValue*): PValue = PArray(values.toVector)
 

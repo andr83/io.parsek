@@ -10,7 +10,7 @@ import scala.reflect.runtime.universe.{TypeTag, typeTag}
 trait Decoder[A] extends Serializable {
   def apply(v: PValue): PResult[A]
 
-  def unsafe(v: PValue): A = apply(v).fold(nel => throw nel.head, identity)
+  def unsafe(v: PValue): A = apply(v).fold(nel => throw nel.head, identity, throw PResult.noSuchElementException)
 }
 
 object Decoder {

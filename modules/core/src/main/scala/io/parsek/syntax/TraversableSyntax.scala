@@ -1,6 +1,6 @@
 package io.parsek.syntax
 
-import io.parsek.{NonEmptyList, PError, PResult, PSuccess}
+import io.parsek._
 
 import scala.collection.generic.CanBuildFrom
 import scala.language.higherKinds
@@ -92,6 +92,7 @@ trait TraversableSyntax extends TraversableSyntax0 {
         case ((lBuilder, rBuilder), PError(nel)) =>
           nel.toList.foreach(lBuilder += _)
           (lBuilder, rBuilder)
+        case ((lBuilder, rBuilder), e: PEmpty) => (lBuilder, rBuilder)
         case _ => throw new IllegalStateException
       }
       (lb.result(), rb.result())

@@ -2,6 +2,7 @@ package io.parsek.optics
 
 import io.parsek.PValue.PMap
 import io.parsek._
+import io.parsek.algebra.Empty
 import io.parsek.implicits._
 
 import scala.language.dynamics
@@ -20,41 +21,43 @@ class GetterPath(private val getter: Getter[PValue, PValue]) extends Dynamic {
   def get(s: PValue): PResult[PValue] = getter.get(s)
 
   /** Cast target PValue -> Option[A]. Using in [[Projection]] */
-  def asOpt[A: Decoder : Encoder]: Getter[PValue, Option[A]] = Getter[PValue, Option[A]](value => {
-    implicitly[Decoder[Option[A]]].apply(getter.get(value).getOrElse(PValue.Null))
-  })
+  def asOpt[A: Decoder: Encoder]: Getter[PValue, A] =
+    Getter[PValue, A](value => {
+      as[A](value) match {
+        case PError(errors) => PResult.empty.withWarnings(errors)
+        case other          => other
+      }
+    })
 
   /** Try safe cast target PValue -> Option[A] from source PValue */
-  def asOpt[A: Decoder](value: PValue): PResult[Option[A]] =
-    (for (
-      v <- getter.get(value);
-      oa <- implicitly[Decoder[Option[A]]].apply(v)
-    ) yield oa)
-      .fold(nel => PResult.valid(None).withWarnings(nel.toList), res => PResult.valid(res))
+  def asOpt[A: Decoder](value: PValue): PResult[A] =
+    as[A](value) match {
+      case PError(errors) => PResult.empty.withWarnings(errors)
+      case other          => other
+    }
 
   /** Cast target PValue -> A. Using in [[Projection]] */
-  def as[A: Decoder : Encoder]: Getter[PValue, A] = Getter[PValue, A](value => {
-    for (
-      v <- getter.get(value);
-      a <- implicitly[Decoder[A]].apply(v)
-    ) yield a
-  })
+  def as[A: Decoder: Encoder]: Getter[PValue, A] =
+    Getter[PValue, A](value => {
+      for (v <- getter.get(value);
+           a <- implicitly[Decoder[A]].apply(v)) yield a
+    })
 
   /** Try unsafe cast target PValue -> A from source PValue */
-  def to[A: Decoder](value: PValue): A = {
+  def to[A: Decoder: Empty](value: PValue): A = {
     as[A](value)
       .fold(
         nel => throw nel.head,
-        v => v
+        v => v,
+        implicitly[Empty[A]].empty
+          .getOrElse(throw PResult.noSuchElementException)
       )
   }
 
   /** Try safe cast target PValue -> A from source PValue */
   def as[A: Decoder](value: PValue): PResult[A] = {
-    for (
-      value <- getter.get(value);
-      a <- implicitly[Decoder[A]].apply(value)
-    ) yield a
+    for (value <- getter.get(value);
+         a <- implicitly[Decoder[A]].apply(value)) yield a
   }
 
   /** Extract value by key in source PMap */
@@ -81,8 +84,7 @@ class GetterPath(private val getter: Getter[PValue, PValue]) extends Dynamic {
       for {
         pa <- getter.get(s)
         a <- decoderA(pa)
-      } yield encoderB(f(a))
-    )
+      } yield encoderB(f(a)))
   }
 
   /** Try to transform target value `A => PResult[B]` */
@@ -94,19 +96,18 @@ class GetterPath(private val getter: Getter[PValue, PValue]) extends Dynamic {
         pa <- getter.get(s)
         a <- decoderA(pa)
         b <- f(a)
-      } yield encoderB(b)
-    )
+      } yield encoderB(b))
   }
 
-  /** Filter target value by predicate. If predicate false instead of target value will return PValue.Null */
+  /** Filter target value by predicate. */
   def filter[A: Decoder](f: A => Boolean): GetterPath = {
     val decoderA = implicitly[Decoder[A]]
     GetterPath(s =>
       for {
         pa <- getter.get(s)
         a <- decoderA(pa)
-      } yield if (f(a)) pa else PValue.Null
-    )
+        if f(a)
+      } yield pa)
   }
 
   /**
@@ -120,23 +121,27 @@ class GetterPath(private val getter: Getter[PValue, PValue]) extends Dynamic {
     * res4: io.parsek.PResult[io.parsek.PValue] = PSuccess(PMap(Map('foo -> PMap(Map('bar -> PInt(200), 'baz -> PInt(20), 'quux -> PString(hello))), 'bat -> PInt(42))),List())
     * }}}
     */
-  def find[A: Decoder : Encoder](p: ((Symbol, A)) => Boolean): TraversalPath[(Symbol, A)] = {
+  def find[A: Decoder: Encoder](
+      p: ((Symbol, A)) => Boolean): TraversalPath[(Symbol, A)] = {
     val decoder = implicitly[Decoder[A]]
     val encoder = implicitly[Encoder[A]]
 
     def getAll(map: Map[Symbol, PValue]): Traversable[(Symbol, A)] = {
       map.toSeq.flatMap {
         case (_, PMap(innerMap)) => getAll(innerMap)
-        case (k, v) => decoder(v).map(a => if (p(k -> a)) Seq(k -> a) else Seq.empty[(Symbol, A)]).getOrElse(Seq.empty[(Symbol, A)])
+        case (k, v) =>
+          decoder(v)
+            .map(a => if (p(k -> a)) Seq(k -> a) else Seq.empty[(Symbol, A)])
+            .getOrElse(Seq.empty[(Symbol, A)])
       }
     }
 
-    def modify(map: Map[Symbol, PValue], f: ((Symbol, A)) => (Symbol, A)): Map[Symbol, PValue] = {
+    def modify(map: Map[Symbol, PValue],
+               f: ((Symbol, A)) => (Symbol, A)): Map[Symbol, PValue] = {
       map.map {
         case (k, PMap(innerMap)) => k -> PValue.fromMap(modify(innerMap, f))
         case (k, v) =>
-          decoder(v)
-            .toOption
+          decoder(v).toOption
             .flatMap(a => if (p(k -> a)) Some(f(k -> a)) else None)
             .map { case (k2, a2) => k2 -> encoder(a2) }
             .getOrElse(k -> v)
@@ -145,23 +150,24 @@ class GetterPath(private val getter: Getter[PValue, PValue]) extends Dynamic {
 
     TraversalPath(Traversal[PValue, (Symbol, A)] {
       case PValue.PMap(map) => getAll(map)
-      case _ => Seq.empty
-    } { f =>
-      s =>
-        getter.get(s).flatMap {
-          case PMap(source) => PResult.valid(PValue.fromMap(modify(source, f)))
-          case other => PResult.invalid(TypeCastFailure(s"Expected PMap value but got $other"))
-        }
+      case _                => Seq.empty
+    } { f => s =>
+      getter.get(s).flatMap {
+        case PMap(source) => PResult.valid(PValue.fromMap(modify(source, f)))
+        case other =>
+          PResult.invalid(
+            TypeCastFailure(s"Expected PMap value but got $other"))
+      }
     })
   }
 
   /** Try fallback option on failure */
-  def orElse(fallback: GetterPath): GetterPath = GetterPath(s =>
-    getter.get(s).orElse(fallback.getter.get(s))
-  )
+  def orElse(fallback: GetterPath): GetterPath =
+    GetterPath(s => getter.get(s).orElse(fallback.getter.get(s)))
 
   /** all dot field magic is here */
-  def selectDynamic(field: String): GetterPath = LensPath(mapLens.compose(index(Symbol(field))))
+  def selectDynamic(field: String): GetterPath =
+    LensPath(mapLens.compose(index(Symbol(field))))
 }
 
 object GetterPath {

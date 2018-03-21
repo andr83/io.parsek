@@ -7,17 +7,30 @@ import io.parsek.{Encoder, PResult}
 abstract class JdbcIO[A] {
   self =>
 
-  def map[B](fa: A => B): JdbcIO[B] = new JdbcIO[B] {
+  @inline def map[B](fa: A => B): JdbcIO[B] = new JdbcIO[B] {
     override def run(implicit qe: QueryExecutor): PResult[B] = self.run.map(fa)
   }
 
-  def flatMap[B](fa: A => JdbcIO[B]): JdbcIO[B] = new JdbcIO[B] {
+  @inline def flatMap[B](fa: A => JdbcIO[B]): JdbcIO[B] = new JdbcIO[B] {
     override def run(implicit qe: QueryExecutor): PResult[B] = self.run.flatMap(fa(_).run)
   }
 
-  def run(implicit qe: QueryExecutor): PResult[A]
+  @inline def filter(p: A => Boolean): JdbcIO[A] = new JdbcIO[A] {
+    override def run(implicit qe: QueryExecutor): PResult[A] = self.run.filter(p)
+  }
 
-  def unsafeRun(implicit qe: QueryExecutor): A = run.unsafe
+  @inline def withFilter(p: A => Boolean): WithFilter = new WithFilter(p)
+
+  class WithFilter(p: A => Boolean) {
+    def map[B](f: A => B): JdbcIO[B] = self filter p map f
+    def flatMap[B](f: A => JdbcIO[B]): JdbcIO[B] = self filter p flatMap f
+    def withFilter(q: A => Boolean): WithFilter =
+      new WithFilter(x => p(x) && q(x))
+  }
+
+  @inline def run(implicit qe: QueryExecutor): PResult[A]
+
+  @inline def unsafeRun(implicit qe: QueryExecutor): A = run.unsafe
 }
 
 object JdbcIO {
@@ -52,7 +65,8 @@ case class InsertIO[A: Encoder](table: String, record: A) extends JdbcIO[Int] {
         val iq = qe.buildInsertQuery(table, pm)
         qe.executeUpdate(iq)
       }
-    case other => PResult.invalid(new IllegalStateException(s"Can not create insert query for $other. Maybe primitive?"))
+    case other =>
+      PResult.invalid(new IllegalStateException(s"Can not create insert query for $other. Maybe primitive?"))
 
   }
 }
@@ -61,11 +75,12 @@ case class BatchInsertIO[A: Encoder](table: String, it: Iterable[A]) extends Jdb
   private val encoder = implicitly[Encoder[A]]
 
   def run(implicit qe: QueryExecutor): PResult[Unit] = {
-    it
-      .map(encoder.apply).map {
-      case pm: PMap => PResult.valid(pm)
-      case other => PResult.invalid(new IllegalStateException(s"Can not create batch query for $other. Maybe primitive?"))
-    }
+    it.map(encoder.apply)
+      .map {
+        case pm: PMap => PResult.valid(pm)
+        case other =>
+          PResult.invalid(new IllegalStateException(s"Can not create batch query for $other. Maybe primitive?"))
+      }
       .toList
       .toPResult
       .flatMap(data => PResult.catchNonFatal(qe.batchInsert(table, data)))

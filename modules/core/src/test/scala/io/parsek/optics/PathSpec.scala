@@ -54,15 +54,26 @@ class PathSpec extends FlatSpec with Matchers {
     lengthLense.get(testValue) shouldBe PResult.valid(5)
 
     val error = new RuntimeException
-    root.fInt.transform[Int, Int](_ => PResult.invalid(error)).as[Int](testValue) shouldBe PResult.invalid(error)
-    root.fInt.transform[Int, Int](_ => PResult.invalid(error)).asOpt[Int](testValue) shouldBe PResult.valid(None).withWarning(error)
+    root.fInt
+      .transform[Int, Int](_ => PResult.invalid(error))
+      .as[Int](testValue) shouldBe PResult.invalid(error)
+    root.fInt
+      .transform[Int, Int](_ => PResult.invalid(error))
+      .asOpt[Int](testValue) shouldBe PResult.empty.withWarning(error)
   }
 
   it should "filter values" in {
-    root.fLong.filter[Long](_ > 10).as[Int].get(testValue) shouldBe PResult.valid(100)
-    root.fLong.filter[Long](_ < 0).as[Int].get(testValue) shouldBe PResult.invalid(NullValue("Trying decode null value to type Int"))
-    root.fLong.filter[Long](_ < 0).asOpt[Int].get(testValue) shouldBe PResult.valid(None)
-    root.fLong.filter[Boolean](identity).asOpt[Boolean].get(testValue) shouldBe PResult.valid(None)
+    root.fLong.filter[Long](_ > 10).as[Int].get(testValue) shouldBe PResult
+      .valid(100)
+    root.fLong.filter[Long](_ < 0).as[Int].get(testValue) shouldBe PResult.empty
+    root.fLong
+      .filter[Long](_ < 0)
+      .asOpt[Int]
+      .get(testValue) shouldBe PResult.empty
+    root.fLong
+      .filter[Boolean](identity)
+      .asOpt[Boolean]
+      .get(testValue) shouldBe PResult.empty.withWarning(TypeCastFailure("Can not cast value PLong(100) to Boolean"))
   }
 
   it should "direct return value" in {
@@ -70,15 +81,33 @@ class PathSpec extends FlatSpec with Matchers {
   }
 
   it should "zoom in multiple values" in {
-    root.find[Int] { case (k, v) => k == 'f1 && v > 0 }.getAll(testValue) shouldBe Seq('f1 -> 1, 'f1 -> 3)
+    root
+      .find[Int] { case (k, v) => k == 'f1 && v > 0 }
+      .getAll(testValue) shouldBe Seq('f1 -> 1, 'f1 -> 3)
 
-    val res = root.find[Int] { case (k, v) => k == 'f1 && v > 0 }.modify { case (k, v) => 'f100 -> v * 100 }(testValue)
-    val expected = testValue.copy(testValue.value + ('fMap -> PValue.pmap('f100 -> PValue(100), 'f2 -> PValue(2), 'f3 -> PValue.pmap('f100 -> PValue(300)), 'f4 -> PValue.pmap('f1 -> PValue(0)))))
+    val res = root
+      .find[Int] { case (k, v) => k == 'f1 && v > 0 }
+      .modify { case (k, v) => 'f100 -> v * 100 }(testValue)
+    val expected = testValue.copy(
+      testValue.value + ('fMap -> PValue.pmap(
+        'f100 -> PValue(100),
+        'f2 -> PValue(2),
+        'f3 -> PValue.pmap('f100 -> PValue(300)),
+        'f4 -> PValue.pmap('f1 -> PValue(0))
+      ))
+    )
     res shouldBe PResult.valid(expected)
   }
 
   it should "set multiple values" in {
-    val expected = testValue.copy(testValue.value + ('fMap -> PValue.pmap('f100 -> PValue(100), 'f2 -> PValue(2), 'f3 -> PValue.pmap('f100 -> PValue(100)), 'f4 -> PValue.pmap('f1 -> PValue(0)))))
+    val expected = testValue.copy(
+      testValue.value + ('fMap -> PValue.pmap(
+        'f100 -> PValue(100),
+        'f2 -> PValue(2),
+        'f3 -> PValue.pmap('f100 -> PValue(100)),
+        'f4 -> PValue.pmap('f1 -> PValue(0))
+      ))
+    )
     root
       .find[Int] { case (k, v) => k == 'f1 && v > 0 }
       .set('f100 -> 100)(testValue) shouldBe PResult.valid(expected)
@@ -86,6 +115,9 @@ class PathSpec extends FlatSpec with Matchers {
 
   "orElse" should "return value from fallback path on primary fail" in {
     root.fStringWrong.as[String].get(testValue) shouldBe a[PError]
-    root.fStringWrong.orElse(root.fString).as[String].get(testValue) shouldBe PResult.valid("hello")
+    root.fStringWrong
+      .orElse(root.fString)
+      .as[String]
+      .get(testValue) shouldBe PResult.valid("hello")
   }
 }

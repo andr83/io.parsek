@@ -13,26 +13,27 @@ import scala.language.higherKinds
   * @author Andrei Tupitcyn
   */
 trait ResultReaderInstances {
-  implicit def traversableResultReader[A, T[_] <: Traversable[_]](
-    implicit rowReader: RowReader[A], cbf: CanBuildFrom[Nothing, A, T[A]]
-  ) = new ResultReader[T[A]] {
-    override def read(rs: ResultSet, config: JdbcConfig): PResult[T[A]] = {
-      val cb = cbf()
-      val errors = List.empty[Throwable]
+  implicit def traversableResultReader[A, T[_] <: Traversable[_]](implicit rowReader: RowReader[A],
+                                                                  cbf: CanBuildFrom[Nothing, A, T[A]]) =
+    new ResultReader[T[A]] {
+      override def read(rs: ResultSet, config: JdbcConfig): PResult[T[A]] = {
+        val cb = cbf()
+        val errors = List.empty[Throwable]
 
-      while (rs.next()) {
-        rowReader.read(rs) match {
-          case PSuccess(a, _) => cb += a
-          case PError(nel) => errors ++ nel.toList
+        while (rs.next()) {
+          rowReader.read(rs) match {
+            case PSuccess(a, _) => cb += a
+            case e: PEmpty      =>
+            case PError(nel)    => errors ++ nel.toList
+          }
+        }
+        if (errors.nonEmpty) {
+          PResult.invalid(NonEmptyList.fromListUnsafe(errors))
+        } else {
+          PResult.valid(cb.result())
         }
       }
-      if (errors.nonEmpty) {
-        PResult.invalid(NonEmptyList.fromListUnsafe(errors))
-      } else {
-        PResult.valid(cb.result())
-      }
     }
-  }
 
   implicit def singleResultReader[A](implicit columnReader: ColumnReader[A]): ResultReader[A] = ResultReader.single[A]()
 
@@ -48,12 +49,14 @@ trait ResultReaderInstances {
         val cb = cbf()
 
         while (rs.next()) {
-          val row = (0 until columnCount).map(i => columns(i).read(rs, i + 1).map(columnNames(i) -> _))
+          val row = (0 until columnCount)
+            .map(i => columns(i).read(rs, i + 1).map(columnNames(i) -> _))
             .toPResult
             .map(PValue.fromFields)
           row match {
             case PSuccess(v, _) => cb += v
-            case e: PError => return e
+            case _: PEmpty      =>
+            case e: PError      => return e
           }
         }
         PResult.valid(cb.result())
