@@ -1,6 +1,5 @@
 package io.parsek
 
-import io.parsek.algebra.Empty
 import org.scalatest.{FlatSpec, Inside, Matchers}
 
 /**
@@ -34,5 +33,16 @@ class PResultSpec extends FlatSpec with Matchers with Inside {
     } yield a * a
 
     res2 shouldBe PResult.empty
+  }
+
+  it should "zipWith" in {
+    val pRes1 = PResult.valid(10)
+    val pRes2 = PResult.valid("coins")
+
+    pRes1.zipWith(pRes2)((p1, p2) => p1.toString + p2).unsafe shouldEqual "10coins"
+  }
+
+  it should "sequence" in {
+    PResult.sequence(Seq(PResult.valid(10), PResult.valid(11))) shouldEqual PResult.valid(Seq(10, 11))
   }
 }

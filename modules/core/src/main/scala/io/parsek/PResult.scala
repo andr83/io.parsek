@@ -4,6 +4,7 @@ import java.util.NoSuchElementException
 
 import io.parsek.algebra.{Empty, EmptyInstances1, Semigroup}
 
+import scala.collection.generic.CanBuildFrom
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -158,6 +159,10 @@ sealed abstract class PResult[+A] {
       empty.empty
         .fold[Either[NonEmptyList[Throwable], AA]](Left(NonEmptyList.one(PResult.noSuchElementException)))(Right.apply)
     )
+
+  @inline def zipWith[U, R](that: PResult[U])(f: (A, U) => R): PResult[R] = {
+    flatMap(r1 => that.map(r2 => f(r1, r2)))
+  }
 }
 
 object PResult extends EmptyInstances1 {
@@ -183,6 +188,12 @@ object PResult extends EmptyInstances1 {
       case Failure(e) => invalid(e)
       case Success(v) => valid(v)
     }
+
+  def sequence[A, M[X] <: TraversableOnce[X]](in: M[PResult[A]])(implicit cbf: CanBuildFrom[M[PResult[A]], A, M[A]]): PResult[M[A]] = {
+    in.foldLeft(PResult.valid(cbf(in))) {
+      (fr, fa) => fr.zipWith(fa)(_ += _)
+    }.map(_.result())
+  }
 }
 
 case class PSuccess[A](private val value: A, warnings: Seq[Throwable] = Nil) extends PResult[A] {
