@@ -10,6 +10,11 @@ import scala.language.higherKinds
   * @author Andrei Tupitcyn
   */
 trait EncoderInstances0 {
+
+  implicit def arrEncoder[A](implicit enc: Encoder[A]): Encoder[Array[A]] = {
+    Encoder.pure[Array[A]](arr => PValue.fromValues(arr.map(enc.apply)))
+  }
+
   implicit def traversableEncoder[A, C[A] <: Iterable[A]](implicit e: Encoder[A]): Encoder[C[A]] = Encoder.pure[C[A]](it => {
     PValue.fromValues(it.map(e.apply))
   })

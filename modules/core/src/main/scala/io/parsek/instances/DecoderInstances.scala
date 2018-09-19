@@ -10,8 +10,8 @@ import io.parsek.syntax.traversable._
 
 import scala.reflect.runtime.universe.TypeTag
 import scala.collection.generic.CanBuildFrom
-
 import scala.language.higherKinds
+import scala.reflect.ClassTag
 
 /**
   * @author Andrei Tupitcyn
@@ -136,6 +136,13 @@ trait DecoderInstances {
       case Null => valid(None)
       case _ => implicitly[Decoder[A]].apply(v).map(Some.apply)
     }
+  }
+
+  implicit def arrDecoder[A: ClassTag](implicit dec: Decoder[A]): Decoder[Array[A]] = {
+    case PArray(v) =>
+      PResult.catchNonFatal(v.map(dec.unsafe).toArray[A])
+    case other =>
+      PResult.invalid(new IllegalStateException(s"Can not traverse over $other. Expected PArray."))
   }
 
   implicit def traversableDecoder[A: Decoder, T[_] <: Traversable[_]](implicit cbf: CanBuildFrom[Nothing, A, T[A]]): Decoder[T[A]] = new Decoder[T[A]] {
