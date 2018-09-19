@@ -32,7 +32,9 @@ object PValue {
 
   final def fromValues(values: Traversable[PValue]): PValue = PArray(values.toVector)
 
-  final def fromFields(fields: Traversable[FieldType]): PValue = PMap(fields.toMap)
+  final def fromFieldSeq(fields: Traversable[FieldType]): PValue = PMap(fields.toMap)
+
+  final def fromFields(fields: FieldType*): PValue = PMap(fields.toMap)
 
   final def fromMap(map: Map[Symbol, PValue]): PValue = PMap(map)
 

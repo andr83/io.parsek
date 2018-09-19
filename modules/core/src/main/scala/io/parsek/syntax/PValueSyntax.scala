@@ -78,7 +78,7 @@ final class PValueOps(val value: PValue) extends AnyVal {
         map
           .map { case (k, v) => d(v).map(f.andThen(r => k -> e(r))) }
           .toPResult
-          .map(PValue.fromFields)
+          .map(PValue.fromFieldSeq)
       case PNull => PResult.valid(PValue.Null)
       case other => d(other).map(f.andThen(e.apply))
     }
@@ -119,7 +119,7 @@ final class PValueOps(val value: PValue) extends AnyVal {
         map
           .map { case (k, pv) => d(pv).flatMap(v => f(v).map(r => k -> e(r))) }
           .toPResult
-          .map(PValue.fromFields)
+          .map(PValue.fromFieldSeq)
       case PNull => PResult.valid(PValue.Null)
       case other => d(other).flatMap(v => f(v).map(e.apply))
     }

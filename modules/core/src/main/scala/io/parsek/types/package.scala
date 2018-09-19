@@ -15,18 +15,14 @@ package types {
 
   abstract sealed class PType
 
-  case class PArrayType(
-    dataType: Option[PType] = None
-  ) extends PType
+  case class PArrayType(dataType: Option[PType] = None, containsNull: Boolean = false) extends PType
 
-  case class PStructField(
-    name: Symbol,
-    dataType: PType,
-    // Allow accept Null values, e.g. key doesn't exist in source map
-    nullable: Boolean = true,
-    // If false and nullable true will return Null on cast errors
-    required: Boolean = false
-  )
+  case class PStructField(name: Symbol,
+                          dataType: PType,
+                          // Allow accept Null values, e.g. key doesn't exist in source map
+                          nullable: Boolean = false,
+                          // If false and nullable true will return Null on cast errors
+                          required: Boolean = false)
 
   case class PStructType(fields: Array[PStructField]) extends PType {
     def add(name: Symbol, dataType: PType, nullable: Boolean = true, required: Boolean = false): PStructType =
@@ -53,6 +49,7 @@ package types {
 
   object PArrayType {
     def apply(dataType: PType): PArrayType = PArrayType(Some(dataType))
+    def apply(dataType: PType, containsNull: Boolean): PArrayType = PArrayType(Some(dataType), containsNull)
   }
 
   case object PMapType extends PType
@@ -64,21 +61,23 @@ package types {
   object PType {
     def apply(value: PValue): PType = value match {
       case _: PBoolean => PBooleanType
-      case _: PInt => PIntType
-      case _: PLong => PLongType
-      case _: PString => PStringType
-      case _: PDouble => PDoubleType
+      case _: PInt     => PIntType
+      case _: PLong    => PLongType
+      case _: PString  => PStringType
+      case _: PDouble  => PDoubleType
       case _: PInstant => PInstantType
-      case _: PDate => PDateType
-      case _: PBytes => PBinaryType
-      case PArray(arr) => PArrayType(arr.foldLeft(arr.headOption.map(PType.apply).map(Some.apply).getOrElse(None)) {
-        case (None, _) => None
-        case (o @ Some(t), v) =>
-          if (PType(v) != t) None else o
+      case _: PDate    => PDateType
+      case _: PBytes   => PBinaryType
+      case PArray(arr) =>
+        PArrayType(arr.foldLeft(arr.headOption.map(PType.apply).map(Some.apply).getOrElse(None)) {
+          case (None, _) => None
+          case (o @ Some(t), v) =>
+            if (PType(v) != t) None else o
         })
-      case PMap(m) => PStructType(m map {
-        case  (k, v) => PStructField(k, PType(v))
-      } toSeq)
+      case PMap(m) =>
+        PStructType(m map {
+          case (k, v) => PStructField(k, PType(v))
+        } toSeq)
       case PNull => throw new IllegalStateException(s"Can not detect type for Null value")
     }
   }

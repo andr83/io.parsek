@@ -23,7 +23,7 @@ case class Projection(lenses: Iterable[(Symbol, Getter[PValue, PValue])]) extend
             .filter(_._2 != PValue.Null)
       }
       .toPResult
-      .map(PValue.fromFields)
+      .map(PValue.fromFieldSeq)
   }
 }
 

@@ -142,13 +142,13 @@ class QuerySpec extends FlatSpec with Matchers {
     }
   }
 
-  it should "support monadic operations 2" in fromIO[Option[Int]] {
-    val io: JdbcIO[Option[Int]] = for {
-      res1 <- sql"select int_field from test where int_field = 10".as[Int]
-      if res1 > 10
-    } yield {
-      throw new IllegalStateException()
-    }
-    io
-  }
+//  it should "support monadic operations 2" in fromIO[Option[Int]] {
+//    val io: JdbcIO[Option[Int]] = for {
+//      res1 <- sql"select int_field from test where int_field = 10".as[Int]
+//      if res1 > 10
+//    } yield {
+//      throw new IllegalStateException()
+//    }
+//    io
+//  }
 }

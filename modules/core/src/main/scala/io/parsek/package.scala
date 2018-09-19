@@ -69,7 +69,7 @@ package object parsek {
       case v: PBytes => PResult.valid(v)
       case x => PResult.invalid(TypeCastFailure(s"Can not cast value $x to PBinaryType"))
     }
-    case PArrayType(innerType) => value match {
+    case PArrayType(innerType, containsNull) => value match {
       case v: PArray => PResult.valid(v) //ToDo: Add inner validation
       case x => PResult.invalid(TypeCastFailure(s"Can not cast value $x to PArrayType"))
     }

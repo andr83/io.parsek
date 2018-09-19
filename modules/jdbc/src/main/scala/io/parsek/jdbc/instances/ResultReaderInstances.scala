@@ -37,6 +37,17 @@ trait ResultReaderInstances {
 
   implicit def singleResultReader[A](implicit columnReader: ColumnReader[A]): ResultReader[A] = ResultReader.single[A]()
 
+  implicit def optResultReader[A](implicit resultReader: ResultReader[A]): ResultReader[Option[A]] =
+    new ResultReader[Option[A]] {
+      override def read(rs: ResultSet, config: JdbcConfig): PResult[Option[A]] = {
+        resultReader.read(rs, config) match {
+          case PSuccess(value, warnings) => PResult.valid(Option(value)).withWarnings(warnings)
+          case PEmpty(warnings)          => PResult.valid(None).withWarnings(warnings)
+          case e: PError                 => e
+        }
+      }
+    }
+
   implicit def pvalueTraversablResultReader[T[_] <: Traversable[_]](
     implicit cbf: CanBuildFrom[Nothing, PValue, T[PValue]]
   ): ResultReader[T[PValue]] = {
@@ -52,7 +63,7 @@ trait ResultReaderInstances {
           val row = (0 until columnCount)
             .map(i => columns(i).read(rs, i + 1).map(columnNames(i) -> _))
             .toPResult
-            .map(PValue.fromFields)
+            .map(PValue.fromFieldSeq)
           row match {
             case PSuccess(v, _) => cb += v
             case _: PEmpty      =>

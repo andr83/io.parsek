@@ -125,7 +125,7 @@ trait ValueBinderInstances extends ParameterTypeMetaInstances {
     case PInstantType => ValueBinder.wrap(instantValueBinder)
     case PDateType => ValueBinder.wrap(localDateValueBinder)
     case PBinaryType => ValueBinder.wrap(byteArrayValueBinder)
-    case PArrayType(innerType) => innerType match {
+    case PArrayType(innerType, containsNull) => innerType match {
       case None => new ValueBinder[PValue] {
         override def apply(pv: PValue): ParameterBinder = pv match {
           case v: PArray => new ParameterBinder {
